@@ -66,6 +66,8 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: ai-lab
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       containers:
         - name: backend
           image: ghcr.io/aymenmastouri/aicodegencrew-backend:latest
@@ -190,6 +192,8 @@ spec:
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: ai-lab
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       containers:
         - name: frontend
           image: ghcr.io/aymenmastouri/aicodegencrew-frontend:latest

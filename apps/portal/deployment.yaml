@@ -22,6 +22,8 @@ spec:
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: ai-lab
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       containers:
         - name: portal
           image: ghcr.io/aymenmastouri/ai-lab-portal:latest
