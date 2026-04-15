@@ -1,0 +1,234 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sdlc-pilot-knowledge
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sdlc-pilot-repo-cache
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sdlc-pilot-fastembed-cache
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+# ─── Backend (FastAPI) ───────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdlc-pilot-backend
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot-backend
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sdlc-pilot-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sdlc-pilot-backend
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: ai-lab
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/aymenmastouri/aicodegencrew-backend:latest
+          ports:
+            - containerPort: 8001
+              name: http
+          env:
+            - name: AICODEGENCREW_ROOT
+              value: /app
+            - name: DASHBOARD_HOST
+              value: "0.0.0.0"
+            - name: DASHBOARD_PORT
+              value: "8001"
+            - name: DASHBOARD_CORS_ORIGINS
+              value: "https://sdlc.aymenmastouri.io"
+            # LiteLLM integration
+            - name: LITELLM_API_BASE
+              value: "http://litellm:4000/v1"
+            - name: LITELLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sdlc-pilot-secrets
+                  key: LITELLM_API_KEY
+            # Qdrant
+            - name: QDRANT_URL
+              value: "http://qdrant:6333"
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sdlc-pilot-secrets
+                  key: QDRANT_API_KEY
+            # MLflow
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow:5000"
+            # Langfuse
+            - name: LANGFUSE_HOST
+              value: "http://langfuse:3000"
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sdlc-pilot-secrets
+                  key: LANGFUSE_PUBLIC_KEY
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sdlc-pilot-secrets
+                  key: LANGFUSE_SECRET_KEY
+          volumeMounts:
+            - name: knowledge
+              mountPath: /app/knowledge
+            - name: repo-cache
+              mountPath: /app/.repo_clones
+            - name: fastembed-cache
+              mountPath: /app/.fastembed_cache
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 200m
+            limits:
+              memory: 2Gi
+              cpu: "1"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: knowledge
+          persistentVolumeClaim:
+            claimName: sdlc-pilot-knowledge
+        - name: repo-cache
+          persistentVolumeClaim:
+            claimName: sdlc-pilot-repo-cache
+        - name: fastembed-cache
+          persistentVolumeClaim:
+            claimName: sdlc-pilot-fastembed-cache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdlc-pilot-backend
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot-backend
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  selector:
+    app.kubernetes.io/name: sdlc-pilot-backend
+  ports:
+    - name: http
+      port: 8001
+      targetPort: http
+---
+# ─── Frontend (Angular / nginx) ─────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdlc-pilot-frontend
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sdlc-pilot-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sdlc-pilot-frontend
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/part-of: ai-lab
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/aymenmastouri/aicodegencrew-frontend:latest
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 10m
+            limits:
+              memory: 128Mi
+              cpu: 100m
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdlc-pilot-frontend
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot-frontend
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  selector:
+    app.kubernetes.io/name: sdlc-pilot-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

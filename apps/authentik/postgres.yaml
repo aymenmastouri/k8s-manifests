@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authentik-postgres-data
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: authentik-postgres
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: authentik-postgres
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: authentik-postgres
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  serviceName: authentik-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authentik-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authentik-postgres
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: ai-lab
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: authentik
+            - name: POSTGRES_DB
+              value: authentik
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 50m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          livenessProbe:
+            exec:
+              command: [sh, -c, "pg_isready -U authentik"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: [sh, -c, "pg_isready -U authentik"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: authentik-postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-postgres
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: authentik-postgres
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  selector:
+    app.kubernetes.io/name: authentik-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

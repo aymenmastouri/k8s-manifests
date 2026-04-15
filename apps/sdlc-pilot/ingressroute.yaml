@@ -1,0 +1,67 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sdlc-pilot-frontend
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot-frontend
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`sdlc.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: sdlc-pilot-frontend
+          port: 80
+  tls:
+    secretName: sdlc-pilot-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sdlc-pilot-api
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: sdlc-pilot-backend
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`sdlc-api.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: sdlc-pilot-backend
+          port: 8001
+  tls:
+    secretName: sdlc-pilot-api-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sdlc-pilot-tls
+  namespace: apps
+spec:
+  secretName: sdlc-pilot-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - sdlc.aymenmastouri.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sdlc-pilot-api-tls
+  namespace: apps
+spec:
+  secretName: sdlc-pilot-api-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - sdlc-api.aymenmastouri.io

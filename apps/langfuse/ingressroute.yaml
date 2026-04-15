@@ -1,0 +1,33 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: langfuse
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: langfuse
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`langfuse.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: langfuse
+          port: 3000
+  tls:
+    secretName: langfuse-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: langfuse-tls
+  namespace: apps
+spec:
+  secretName: langfuse-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - langfuse.aymenmastouri.io

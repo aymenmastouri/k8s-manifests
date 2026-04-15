@@ -1,0 +1,33 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: qdrant
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: qdrant
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`qdrant.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: qdrant
+          port: 6333
+  tls:
+    secretName: qdrant-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: qdrant-tls
+  namespace: apps
+spec:
+  secretName: qdrant-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - qdrant.aymenmastouri.io

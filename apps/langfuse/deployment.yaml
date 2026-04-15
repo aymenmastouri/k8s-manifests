@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: langfuse-data
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: langfuse
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langfuse
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: langfuse
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: langfuse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: langfuse
+        app.kubernetes.io/component: server
+        app.kubernetes.io/part-of: ai-lab
+    spec:
+      containers:
+        - name: langfuse
+          image: langfuse/langfuse:3
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: LANGFUSE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: LANGFUSE_DB_PASSWORD
+            - name: DATABASE_URL
+              value: "postgresql://langfuse:$(LANGFUSE_DB_PASSWORD)@langfuse-postgres:5432/langfuse"
+            - name: NEXTAUTH_URL
+              value: "https://langfuse.aymenmastouri.io"
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: LANGFUSE_NEXTAUTH_SECRET
+            - name: SALT
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: LANGFUSE_SALT
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: PORT
+              value: "3000"
+            # --- SSO via Authentik ---
+            - name: AUTH_CUSTOM_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: LANGFUSE_OAUTH_CLIENT_ID
+            - name: AUTH_CUSTOM_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: LANGFUSE_OAUTH_CLIENT_SECRET
+            - name: AUTH_CUSTOM_ISSUER
+              value: "https://auth.aymenmastouri.io/application/o/langfuse/"
+            - name: AUTH_CUSTOM_NAME
+              value: "SSO"
+            - name: AUTH_CUSTOM_ALLOW_ACCOUNT_LINKING
+              value: "true"
+            - name: AUTH_CUSTOM_CHECKS
+              value: "state"
+            - name: AUTH_CUSTOM_SCOPE
+              value: "openid email profile"
+            - name: AUTH_DISABLE_SIGNUP
+              value: "true"
+            - name: NEXT_PUBLIC_SIGN_UP_DISABLED
+              value: "true"
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          livenessProbe:
+            httpGet:
+              path: /api/public/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/public/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: langfuse
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: langfuse
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  selector:
+    app.kubernetes.io/name: langfuse
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

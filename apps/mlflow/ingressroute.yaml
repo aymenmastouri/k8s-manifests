@@ -1,0 +1,33 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mlflow
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: mlflow
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`mlflow.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: mlflow
+          port: 5000
+  tls:
+    secretName: mlflow-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mlflow-tls
+  namespace: apps
+spec:
+  secretName: mlflow-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - mlflow.aymenmastouri.io

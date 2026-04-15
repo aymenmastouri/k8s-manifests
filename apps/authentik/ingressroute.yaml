@@ -1,0 +1,33 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authentik
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: authentik-server
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`auth.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: authentik-server
+          port: 9000
+  tls:
+    secretName: authentik-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-tls
+  namespace: apps
+spec:
+  secretName: authentik-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - auth.aymenmastouri.io
