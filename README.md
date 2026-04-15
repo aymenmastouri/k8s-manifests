@@ -1,141 +1,100 @@
 # k8s-manifests
 
-Kubernetes manifests for the **AI Lab** platform. Fully managed by ArgoCD (GitOps).
+GitOps-Kubernetes-Manifests fuer die **AI Lab** Plattform auf einem OVH VPS.
 
-## Architecture
+Alles wird ueber ArgoCD (App-of-Apps) deployed. Ein `git push` auf `main` triggert automatisch das Deployment.
+
+## Architektur
 
 ```
-OVH VPS (51.195.116.255) — k3s v1.34.6
+OVH VPS (51.195.116.255) — k3s v1.34.6 — Ubuntu 25.04
+│
 ├── Namespace: infra
-│   └── ArgoCD v2.14.12 (App-of-Apps pattern)
+│   ├── ArgoCD v2.14.12         (GitOps Controller)
+│   └── Sealed Secrets          (Git-safe verschluesselte Secrets)
+│
 ├── Namespace: apps
-│   ├── Portal             → ai.aymenmastouri.io
-│   ├── Portfolio           → aymenmastouri.io
-│   ├── Authentik SSO       → auth.aymenmastouri.io
-│   ├── Ollama (LLM)       → internal
-│   ├── Qdrant (VectorDB)  → qdrant.aymenmastouri.io
-│   ├── LiteLLM (Proxy)    → llm.aymenmastouri.io
-│   ├── Open WebUI (Chat)  → chat.aymenmastouri.io
-│   ├── Langfuse (Traces)  → langfuse.aymenmastouri.io
-│   ├── MLflow (Experiments)→ mlflow.aymenmastouri.io
-│   └── SDLC Pilot (BE+FE) → sdlc.aymenmastouri.io / sdlc-api.aymenmastouri.io
-└── Namespace: monitoring
-    ├── Prometheus          → prometheus.aymenmastouri.io
-    ├── Grafana             → grafana.aymenmastouri.io
-    ├── AlertManager
-    ├── Loki (Logs)
-    └── Promtail (Log Shipper)
+│   ├── Portal                  → ai.aymenmastouri.io        (Landing Page)
+│   ├── Portfolio               → aymenmastouri.io            (Hugo + Toha)
+│   ├── Authentik SSO           → auth.aymenmastouri.io       (OIDC/SAML)
+│   ├── Ollama                  → intern                      (LLM Runtime)
+│   ├── Qdrant                  → qdrant.aymenmastouri.io     (Vector DB)
+│   ├── LiteLLM                 → llm.aymenmastouri.io        (LLM Proxy)
+│   ├── Open WebUI              → chat.aymenmastouri.io       (Chat UI)
+│   ├── Langfuse                → langfuse.aymenmastouri.io   (LLM Traces)
+│   ├── MLflow                  → mlflow.aymenmastouri.io     (Experiments)
+│   └── SDLC Pilot (BE+FE)     → sdlc.aymenmastouri.io       (AI SDLC Tool)
+│
+├── Namespace: monitoring
+│   ├── Prometheus              → prometheus.aymenmastouri.io
+│   ├── Grafana                 → grafana.aymenmastouri.io
+│   ├── AlertManager
+│   ├── Loki                    (Log Aggregation)
+│   └── Promtail               (Log Shipper)
+│
+└── Namespace: cert-manager
+    └── cert-manager v1.17.2    (Let's Encrypt TLS)
 ```
 
-## Repository Structure
+## Repository-Struktur
 
 ```
 k8s-manifests/
-├── apps/
-│   ├── authentik/          # SSO: Postgres, Redis, Server, Worker, IngressRoute
-│   ├── langfuse/           # LLM Observability: Postgres, Deployment, IngressRoute
-│   ├── litellm/            # LLM Proxy: Deployment, ConfigMap, IngressRoute
-│   ├── mlflow/             # Experiment Tracking: Postgres, Deployment, IngressRoute
-│   ├── ollama/             # Local LLM Runtime: Deployment (20Gi PVC)
-│   ├── open-webui/         # Chat UI: Deployment, IngressRoute
-│   ├── portal/             # Landing Page: Deployment (GHCR image)
-│   ├── portfolio/          # Personal Site: Deployment, ConfigMap
-│   ├── qdrant/             # Vector DB: Deployment (dual PVCs)
-│   └── sdlc-pilot/         # SDLC Tool: Backend + Frontend Deployments, ConfigMap
+├── apps/                          # Ein Ordner pro Service
+│   ├── authentik/                 # SSO: Postgres, Redis, Server, Worker
+│   ├── langfuse/                  # LLM Observability: Postgres, Deployment
+│   ├── litellm/                   # LLM Proxy: Deployment, ConfigMap
+│   ├── mlflow/                    # Experiment Tracking: Postgres, Deployment
+│   ├── ollama/                    # LLM Runtime: Deployment (20Gi PVC)
+│   ├── open-webui/                # Chat UI: Deployment
+│   ├── portal/                    # Landing Page: GHCR Image
+│   ├── portfolio/                 # Portfolio: Hugo/Toha GHCR Image
+│   ├── qdrant/                    # Vector DB: Deployment (dual PVCs)
+│   └── sdlc-pilot/               # SDLC Tool: Backend + Frontend + ConfigMap
 ├── argocd/
-│   ├── app-of-apps.yaml    # Root Application (watches applications/)
-│   ├── projects/
-│   │   └── ai-lab.yaml     # AppProject definition
-│   └── applications/       # One Application per service (10 total)
-└── infrastructure/
-    ├── cert-manager/        # TLS automation (Let's Encrypt)
-    ├── monitoring/          # kube-prometheus-stack values + IngressRoutes
-    ├── logging/             # Loki + Promtail values
-    └── sealed-secrets/      # Bitnami Sealed Secrets
+│   ├── app-of-apps.yaml           # Root Application
+│   ├── projects/ai-lab.yaml       # AppProject
+│   └── applications/              # 10 ArgoCD Applications
+├── infrastructure/
+│   ├── cert-manager/              # TLS Automation
+│   ├── monitoring/                # kube-prometheus-stack Values + IngressRoutes
+│   ├── logging/                   # Loki + Promtail Values
+│   └── sealed-secrets/            # Bitnami Sealed Secrets
+└── docs/                          # Dokumentation
+    ├── ARCHITECTURE.md
+    ├── MIGRATION.md
+    ├── RUNBOOK.md
+    ├── GITOPS-WORKFLOW.md
+    ├── MONITORING.md
+    ├── LENS-GUIDE.md
+    ├── LEARN.md
+    └── DISASTER-RECOVERY.md
 ```
 
 ## Stack
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| k3s | v1.34.6 | Lightweight Kubernetes |
-| ArgoCD | v2.14.12 | GitOps continuous delivery |
-| Traefik | v3 (k3s built-in) | Ingress + TLS termination |
-| cert-manager | v1.17.2 | Automated Let's Encrypt certificates |
-| Sealed Secrets | Bitnami | Git-safe encrypted secrets |
-| Prometheus | v0.90.1 | Metrics collection (13 targets) |
-| Grafana | latest | Dashboards (3 datasources) |
-| AlertManager | latest | Alert routing |
-| Loki | v3.6.7 | Log aggregation |
-| Promtail | v3.5.1 | Log shipping |
+| Komponente | Version | Zweck |
+|-----------|---------|-------|
+| k3s | v1.34.6 | Leichtgewichtiges Kubernetes |
+| ArgoCD | v2.14.12 | GitOps Continuous Delivery |
+| Traefik | v3 (k3s built-in) | Ingress + TLS Termination |
+| cert-manager | v1.17.2 | Let's Encrypt Zertifikate |
+| Sealed Secrets | Bitnami | Git-sichere verschluesselte Secrets |
+| Prometheus | kube-prometheus-stack | Metrics + Alerting |
+| Grafana | latest | Dashboards (3 Datasources) |
+| Loki | v3.6.7 | Log Aggregation |
+| Promtail | v3.5.1 | Log Shipping |
 
-## GitOps Workflow
-
-```
-1. Edit manifests → git push to main
-2. ArgoCD detects changes (3 min poll or manual refresh)
-3. ArgoCD syncs to cluster (auto-prune + self-heal)
-```
-
-### Sync Waves (Deployment Order)
+## Sync-Waves (Deployment-Reihenfolge)
 
 | Wave | Services |
 |------|----------|
-| 0 | Portal |
-| 1 | Authentik (SSO provider) |
-| 2 | Ollama, Qdrant, Portfolio |
+| 0 | Portal, Portfolio |
+| 1 | Authentik (SSO Provider) |
+| 2 | Ollama, Qdrant |
 | 3 | LiteLLM, Langfuse, MLflow |
 | 4 | Open WebUI |
 | 5 | SDLC Pilot |
-
-## CI/CD
-
-SDLC Pilot images are built via GitHub Actions on push to `main`:
-- `ghcr.io/aymenmastouri/aicodegencrew-backend:latest`
-- `ghcr.io/aymenmastouri/aicodegencrew-frontend:latest`
-
-Portal image: `ghcr.io/aymenmastouri/ai-lab-portal:latest`
-
-To redeploy after image update:
-```bash
-kubectl rollout restart deployment <name> -n apps
-```
-
-## Secrets Management
-
-Secrets are encrypted with Sealed Secrets (public key encryption).
-Only the cluster controller can decrypt them.
-
-```bash
-# Seal a new secret
-kubeseal --format yaml < secret.yaml > sealed-secret.yaml
-
-# GHCR pull credentials (created manually, not in Git)
-kubectl get secret ghcr-credentials -n apps
-```
-
-## Quick Commands
-
-```bash
-# Check all services
-kubectl get pods -n apps
-kubectl get pods -n monitoring
-
-# ArgoCD status
-kubectl get applications -n infra
-
-# Force sync
-kubectl -n infra annotate application <name> argocd.argoproj.io/refresh=hard --overwrite
-
-# TLS certificates
-kubectl get certificates -A
-
-# Logs (via Loki in Grafana or kubectl)
-kubectl logs -n apps deploy/<name> --tail=50
-
-# Pull Ollama models
-kubectl exec -n apps deploy/ollama -- ollama pull qwen2.5:3b
-```
 
 ## Endpoints
 
@@ -148,8 +107,47 @@ kubectl exec -n apps deploy/ollama -- ollama pull qwen2.5:3b
 | https://llm.aymenmastouri.io | LiteLLM | API Key |
 | https://qdrant.aymenmastouri.io | Qdrant | API Key |
 | https://langfuse.aymenmastouri.io | Langfuse | OIDC (Authentik) |
-| https://mlflow.aymenmastouri.io | MLflow | Public |
+| https://mlflow.aymenmastouri.io | MLflow | Forward Auth |
 | https://sdlc.aymenmastouri.io | SDLC Pilot | Public |
-| https://sdlc-api.aymenmastouri.io | SDLC Pilot API | Public |
 | https://grafana.aymenmastouri.io | Grafana | admin/admin |
 | https://prometheus.aymenmastouri.io | Prometheus | Public |
+
+## Quick Commands
+
+```bash
+# Alle Pods pruefen
+kubectl get pods -n apps
+kubectl get pods -n monitoring
+
+# ArgoCD Status
+kubectl get applications -n infra
+
+# Force Sync
+kubectl -n infra annotate application <name> argocd.argoproj.io/refresh=hard --overwrite
+
+# TLS Zertifikate
+kubectl get certificates -A
+
+# Logs eines Services
+kubectl logs -n apps deploy/<name> --tail=50
+
+# Rollout nach Image-Update
+kubectl rollout restart deployment <name> -n apps
+
+# Ollama Modelle
+kubectl exec -n apps deploy/ollama -- ollama pull qwen2.5:3b
+kubectl exec -n apps deploy/ollama -- ollama list
+```
+
+## Dokumentation
+
+| Dokument | Inhalt |
+|----------|--------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Gesamt-Architektur mit Diagramm |
+| [MIGRATION.md](docs/MIGRATION.md) | Was wurde bei der Migration gemacht |
+| [RUNBOOK.md](docs/RUNBOOK.md) | Operations: Restart, Logs, Backup, Restore |
+| [GITOPS-WORKFLOW.md](docs/GITOPS-WORKFLOW.md) | Wie deploye ich Aenderungen |
+| [MONITORING.md](docs/MONITORING.md) | Grafana, Prometheus, Loki nutzen |
+| [LENS-GUIDE.md](docs/LENS-GUIDE.md) | Lens fuer Cluster-Management |
+| [LEARN.md](docs/LEARN.md) | Lern-Notes pro Komponente |
+| [DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md) | Was tun wenn alles brennt |
