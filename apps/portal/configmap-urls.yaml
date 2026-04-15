@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-lab-urls
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: ai-lab-urls
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/managed-by: argocd
+data:
+  portal: "https://ai.aymenmastouri.io"
+  portfolio: "https://aymenmastouri.io"
+  authentik: "https://auth.aymenmastouri.io  (akadmin + password)"
+  argocd: "https://argocd.aymenmastouri.io  (admin + password)"
+  open-webui: "https://chat.aymenmastouri.io  (SSO via Authentik)"
+  litellm: "https://llm.aymenmastouri.io  (admin + password)"
+  grafana: "https://grafana.aymenmastouri.io  (admin + password)"
+  prometheus: "https://prometheus.aymenmastouri.io"
+  langfuse: "https://langfuse.aymenmastouri.io  (SSO via Authentik)"
+  mlflow: "https://mlflow.aymenmastouri.io"
+  qdrant: "https://qdrant.aymenmastouri.io  (API Key only)"
+  sdlc-pilot: "https://sdlc.aymenmastouri.io"
+  sdlc-api: "https://sdlc-api.aymenmastouri.io  (API Key only)"
