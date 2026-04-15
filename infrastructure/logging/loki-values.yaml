@@ -1,0 +1,50 @@
+# Loki Helm Values — Single-Node k3s (SingleBinary Mode)
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+# Deaktiviere verteilte Komponenten (nicht nötig für Single Node)
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+# Gateway deaktivieren — Promtail schickt direkt an Loki
+gateway:
+  enabled: false
+
+# Chunkspeicher
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
