@@ -47,13 +47,15 @@ spec:
                 secretKeyRef:
                   name: mlflow-secrets
                   key: MLFLOW_DB_PASSWORD
-          command:
-            - mlflow
-            - server
-            - --host=0.0.0.0
-            - --port=5000
-            - --backend-store-uri=postgresql://mlflow:$(MLFLOW_DB_PASSWORD)@mlflow-postgres:5432/mlflow
-            - --default-artifact-root=/mlflow/artifacts
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              pip install psycopg2-binary --quiet &&
+              mlflow server \
+                --host 0.0.0.0 \
+                --port 5000 \
+                --backend-store-uri "postgresql://mlflow:$(MLFLOW_DB_PASSWORD)@mlflow-postgres:5432/mlflow" \
+                --default-artifact-root /mlflow/artifacts
           volumeMounts:
             - name: artifacts
               mountPath: /mlflow/artifacts
