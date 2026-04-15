@@ -5,7 +5,7 @@
 grafana:
   enabled: true
   adminUser: admin
-  adminPassword: admin  # Wird über Authentik SSO ersetzt
+  adminPassword: ""  # SSO via Authentik — kein statisches Passwort
   persistence:
     enabled: true
     size: 2Gi
