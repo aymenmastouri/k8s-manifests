@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ai-lab
+  namespace: infra
+spec:
+  description: AI Lab services and infrastructure
+  sourceRepos:
+    - git@github.com:aymenmastouri/k8s-manifests.git
+  destinations:
+    - namespace: apps
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: infra
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: traefik.io
+      kind: IngressRoute
+    - group: traefik.io
+      kind: Middleware
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: ClusterIssuer
