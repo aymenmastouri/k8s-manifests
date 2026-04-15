@@ -54,7 +54,6 @@ spec:
             - --port=5000
             - --backend-store-uri=postgresql://mlflow:$(MLFLOW_DB_PASSWORD)@mlflow-postgres:5432/mlflow
             - --default-artifact-root=/mlflow/artifacts
-            - --allowed-hosts=mlflow.aymenmastouri.io,mlflow
           volumeMounts:
             - name: artifacts
               mountPath: /mlflow/artifacts
