@@ -149,7 +149,7 @@ spec:
             periodSeconds: 15
           livenessProbe:
             httpGet:
-              path: /health/liveliness
+              path: /health/liveness
               port: http
             initialDelaySeconds: 90
             periodSeconds: 30
