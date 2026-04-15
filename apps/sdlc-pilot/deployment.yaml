@@ -71,6 +71,7 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/aymenmastouri/aicodegencrew-backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8001
               name: http
@@ -197,6 +198,7 @@ spec:
       containers:
         - name: frontend
           image: ghcr.io/aymenmastouri/aicodegencrew-frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
               name: http
