@@ -1,10 +1,10 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: portal-tls
+  name: ai-lab-tls
   namespace: apps
 spec:
-  secretName: portal-tls
+  secretName: ai-lab-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
@@ -14,10 +14,10 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: portal
+  name: ai-lab
   namespace: apps
   labels:
-    app.kubernetes.io/name: portal
+    app.kubernetes.io/name: ai-lab
     app.kubernetes.io/part-of: ai-lab
     app.kubernetes.io/managed-by: argocd
 spec:
@@ -27,7 +27,7 @@ spec:
     - match: Host(`ai.aymenmastouri.io`)
       kind: Rule
       services:
-        - name: portal
+        - name: ai-lab
           port: 80
   tls:
-    secretName: portal-tls
+    secretName: ai-lab-tls
