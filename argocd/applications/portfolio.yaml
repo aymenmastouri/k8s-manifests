@@ -5,10 +5,10 @@ metadata:
   namespace: infra
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    # ArgoCD Image Updater — auto-deploy on new image push
+    # ArgoCD Image Updater — auto-deploy newest image by build date
     argocd-image-updater.argoproj.io/image-list: portfolio=ghcr.io/aymenmastouri/portfolio
-    argocd-image-updater.argoproj.io/portfolio.update-strategy: digest
-    argocd-image-updater.argoproj.io/portfolio.allow-tags: regexp:^latest$
+    argocd-image-updater.argoproj.io/portfolio.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/portfolio.allow-tags: regexp:^[0-9a-f]{40}$
     argocd-image-updater.argoproj.io/write-back-method: argocd
 spec:
   project: ai-lab
