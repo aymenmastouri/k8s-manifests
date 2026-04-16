@@ -8,7 +8,9 @@ metadata:
     # ArgoCD Image Updater — auto-deploy on new image push
     argocd-image-updater.argoproj.io/image-list: backend=ghcr.io/aymenmastouri/aicodegencrew-backend,frontend=ghcr.io/aymenmastouri/aicodegencrew-frontend
     argocd-image-updater.argoproj.io/backend.update-strategy: digest
+    argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^latest$
     argocd-image-updater.argoproj.io/frontend.update-strategy: digest
+    argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^latest$
     argocd-image-updater.argoproj.io/write-back-method: argocd
 spec:
   project: ai-lab

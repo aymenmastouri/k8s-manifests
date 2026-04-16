@@ -8,6 +8,7 @@ metadata:
     # ArgoCD Image Updater — auto-deploy on new image push
     argocd-image-updater.argoproj.io/image-list: portfolio=ghcr.io/aymenmastouri/portfolio
     argocd-image-updater.argoproj.io/portfolio.update-strategy: digest
+    argocd-image-updater.argoproj.io/portfolio.allow-tags: regexp:^latest$
     argocd-image-updater.argoproj.io/write-back-method: argocd
 spec:
   project: ai-lab
