@@ -107,20 +107,40 @@ spec:
       - CreateNamespace=true
 ```
 
-## CI/CD Pipeline (SDLC Pilot)
+## CI/CD Pipeline mit ArgoCD Image Updater
 
-SDLC Pilot hat eine GitHub Actions Pipeline die bei Push auf `main` im `aicodegencrew` Repo automatisch baut:
+Alle Custom-Image-Repos (portfolio, aicodegencrew) haben GitHub Actions Pipelines.
+ArgoCD Image Updater ueberwacht GHCR alle 2 Minuten und deployed neue Images automatisch.
 
 ```
-Push auf aicodegencrew/main
+Push auf main (z.B. portfolio, aicodegencrew)
   → GitHub Actions
-    → Build Backend Docker Image
-    → Build Frontend Docker Image
+    → Build Docker Image
     → Push zu GHCR (:latest + :sha)
-  → kubectl rollout restart (manuell oder Webhook)
+  → ArgoCD Image Updater erkennt neuen SHA-Tag (alle 2 Min)
+    → ArgoCD aktualisiert Kustomize Image-Override
+    → Rollout automatisch — kein manueller Eingriff noetig
 ```
 
-### Nach Image-Build deployen
+### Ueberwachte Images
+
+| App | Images | Repo |
+|-----|--------|------|
+| portfolio | `ghcr.io/aymenmastouri/portfolio` | `aymenmastouri/portfolio` |
+| sdlc-pilot | `ghcr.io/aymenmastouri/aicodegencrew-backend` | `aymenmastouri/aicodegencrew` |
+| sdlc-pilot | `ghcr.io/aymenmastouri/aicodegencrew-frontend` | `aymenmastouri/aicodegencrew` |
+
+### Strategie: newest-build
+
+Image Updater nutzt die `newest-build` Strategie mit `allow-tags: regexp:^[0-9a-f]{40}$`.
+Das heisst: er sucht den neuesten SHA-Tag (40-stelliger Hex-Hash) nach Build-Timestamp.
+
+### Kustomize
+
+Portfolio und SDLC Pilot nutzen Kustomize (`kustomization.yaml`) mit einem `images:` Block.
+Image Updater setzt dort den neuen Tag via ArgoCD Parameter-Override.
+
+### Manueller Rollout (nur falls noetig)
 ```bash
 kubectl rollout restart deployment sdlc-pilot-backend -n apps
 kubectl rollout restart deployment sdlc-pilot-frontend -n apps
@@ -145,9 +165,8 @@ ArgoCD deployed Services in einer definierten Reihenfolge:
 
 | Wave | Services | Warum |
 |------|----------|-------|
-| 0 | Portal, Portfolio | Keine Dependencies, sofort starten |
 | 1 | Authentik | SSO-Provider muss vor OIDC-Clients laufen |
-| 2 | Ollama, Qdrant | Basis-Infra fuer AI Services |
+| 2 | Portfolio, Ollama, Qdrant | Basis-Infra + statische Seiten |
 | 3 | LiteLLM, Langfuse, MLflow | Brauchen Ollama/Qdrant |
 | 4 | Open WebUI | Braucht LiteLLM + Authentik OIDC |
 | 5 | SDLC Pilot | Braucht alles |

@@ -31,7 +31,8 @@ Die AI Lab Platform ist ein Self-Hosted Sovereign AI Stack. Alle Komponenten lau
    │ infra        │    │                       │   │ monitoring      │
    │              │    │  ┌───────────────┐    │   │                 │
    │ ArgoCD       │    │  │ Authentik SSO │    │   │ Prometheus      │
-   │ Sealed Sec.  │    │  └───────┬───────┘    │   │ Grafana         │
+   │ Image Updater│    │  └───────┬───────┘    │   │ Grafana         │
+   │ Sealed Sec.  │    │
    └──────────────┘    │          │ OIDC       │   │ AlertManager    │
                        │  ┌───────▼───────┐    │   │ Loki            │
                        │  │ Open WebUI    │    │   │ Promtail        │
@@ -63,8 +64,8 @@ Die AI Lab Platform ist ein Self-Hosted Sovereign AI Stack. Alle Komponenten lau
                        │  └───────────────┘    │
                        │                       │
                        │  ┌───────────────┐    │
-                       │  │ Portal        │    │
                        │  │ Portfolio     │    │
+                       │  │ (Blowfish)    │    │
                        │  └───────────────┘    │
                        └───────────────────────┘
 ```
@@ -73,8 +74,8 @@ Die AI Lab Platform ist ein Self-Hosted Sovereign AI Stack. Alle Komponenten lau
 
 | Namespace | Zweck | Services |
 |-----------|-------|----------|
-| `infra` | Cluster-Infrastruktur | ArgoCD, Sealed Secrets Controller |
-| `apps` | Anwendungen | 10 Services (Portal, Authentik, Ollama, etc.) |
+| `infra` | Cluster-Infrastruktur | ArgoCD, ArgoCD Image Updater, Sealed Secrets Controller |
+| `apps` | Anwendungen | 9 Services (Authentik, Ollama, Portfolio, SDLC Pilot, etc.) |
 | `monitoring` | Observability | Prometheus, Grafana, AlertManager, Loki, Promtail |
 | `cert-manager` | TLS Automation | cert-manager Controller + Webhooks |
 | `kube-system` | k3s System | Traefik, CoreDNS, local-path-provisioner |
@@ -138,16 +139,15 @@ Alle PVCs nutzen `local-path` (k3s default StorageClass). Daten liegen unter `/v
 
 ```
 app-of-apps (Root)
-├── portal          (Wave 0)
-├── portfolio       (Wave 0)
 ├── authentik       (Wave 1)
+├── portfolio       (Wave 2)  ← Image Updater: auto-deploy
 ├── ollama          (Wave 2)
 ├── qdrant          (Wave 2)
 ├── litellm         (Wave 3)
 ├── langfuse        (Wave 3)
 ├── mlflow          (Wave 3)
 ├── open-webui      (Wave 4)
-└── sdlc-pilot      (Wave 5)
+└── sdlc-pilot      (Wave 5)  ← Image Updater: auto-deploy
 ```
 
 Jede Application ueberwacht einen Ordner unter `apps/<name>/` und synct automatisch bei Aenderungen (auto-sync + self-heal + prune).

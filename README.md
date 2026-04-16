@@ -11,11 +11,11 @@ OVH VPS (51.195.116.255) — k3s v1.34.6 — Ubuntu 25.04
 │
 ├── Namespace: infra
 │   ├── ArgoCD v2.14.12         (GitOps Controller)
+│   ├── ArgoCD Image Updater    (Auto-Deploy bei neuem Image)
 │   └── Sealed Secrets          (Git-safe verschluesselte Secrets)
 │
 ├── Namespace: apps
-│   ├── Portal                  → ai.aymenmastouri.io        (Landing Page)
-│   ├── Portfolio               → aymenmastouri.io            (Hugo + Toha)
+│   ├── Portfolio               → aymenmastouri.io            (Hugo + Blowfish)
 │   ├── Authentik SSO           → auth.aymenmastouri.io       (OIDC/SAML)
 │   ├── Ollama                  → intern                      (LLM Runtime)
 │   ├── Qdrant                  → qdrant.aymenmastouri.io     (Vector DB)
@@ -47,18 +47,18 @@ k8s-manifests/
 │   ├── mlflow/                    # Experiment Tracking: Postgres, Deployment
 │   ├── ollama/                    # LLM Runtime: Deployment (20Gi PVC)
 │   ├── open-webui/                # Chat UI: Deployment
-│   ├── portal/                    # Landing Page: GHCR Image
-│   ├── portfolio/                 # Portfolio: Hugo/Toha GHCR Image
+│   ├── portfolio/                 # Portfolio: Hugo/Blowfish GHCR Image (Kustomize)
 │   ├── qdrant/                    # Vector DB: Deployment (dual PVCs)
-│   └── sdlc-pilot/               # SDLC Tool: Backend + Frontend + ConfigMap
+│   └── sdlc-pilot/               # SDLC Tool: Backend + Frontend + ConfigMap (Kustomize)
 ├── argocd/
 │   ├── app-of-apps.yaml           # Root Application
 │   ├── projects/ai-lab.yaml       # AppProject
-│   └── applications/              # 10 ArgoCD Applications
+│   └── applications/              # 9 ArgoCD Applications
 ├── infrastructure/
 │   ├── cert-manager/              # TLS Automation
 │   ├── monitoring/                # kube-prometheus-stack Values + IngressRoutes
 │   ├── logging/                   # Loki + Promtail Values
+│   ├── argocd-image-updater/      # Auto-Deploy bei neuem GHCR Image
 │   └── sealed-secrets/            # Bitnami Sealed Secrets
 └── docs/                          # Dokumentation
     ├── ARCHITECTURE.md
@@ -80,6 +80,7 @@ k8s-manifests/
 | Traefik | v3 (k3s built-in) | Ingress + TLS Termination |
 | cert-manager | v1.17.2 | Let's Encrypt Zertifikate |
 | Sealed Secrets | Bitnami | Git-sichere verschluesselte Secrets |
+| ArgoCD Image Updater | v0.15.1 | Auto-Deploy bei neuem GHCR Image |
 | Prometheus | kube-prometheus-stack | Metrics + Alerting |
 | Grafana | latest | Dashboards (3 Datasources) |
 | Loki | v3.6.7 | Log Aggregation |
@@ -89,9 +90,8 @@ k8s-manifests/
 
 | Wave | Services |
 |------|----------|
-| 0 | Portal, Portfolio |
 | 1 | Authentik (SSO Provider) |
-| 2 | Ollama, Qdrant |
+| 2 | Portfolio, Ollama, Qdrant |
 | 3 | LiteLLM, Langfuse, MLflow |
 | 4 | Open WebUI |
 | 5 | SDLC Pilot |
@@ -100,7 +100,6 @@ k8s-manifests/
 
 | URL | Service | Auth |
 |-----|---------|------|
-| https://ai.aymenmastouri.io | Portal | Public |
 | https://aymenmastouri.io | Portfolio | Public |
 | https://auth.aymenmastouri.io | Authentik SSO | Public |
 | https://chat.aymenmastouri.io | Open WebUI | OIDC (Authentik) |
@@ -131,7 +130,8 @@ kubectl get certificates -A
 # Logs eines Services
 kubectl logs -n apps deploy/<name> --tail=50
 
-# Rollout nach Image-Update
+# Image-Updates (automatisch via ArgoCD Image Updater)
+# Manueller Rollout nur falls noetig:
 kubectl rollout restart deployment <name> -n apps
 
 # Ollama Modelle
