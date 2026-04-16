@@ -1,0 +1,130 @@
+## ArgoCD Image Updater — watches GHCR for new image digests and triggers rollouts
+## Installed in the same namespace as ArgoCD (infra)
+## Docs: https://argocd-image-updater.readthedocs.io/
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-image-updater
+  namespace: infra
+  labels:
+    app.kubernetes.io/name: argocd-image-updater
+    app.kubernetes.io/part-of: argocd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argocd-image-updater
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: [applications]
+    verbs: [get, list, update, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argocd-image-updater
+subjects:
+  - kind: ServiceAccount
+    name: argocd-image-updater
+    namespace: infra
+roleRef:
+  kind: ClusterRole
+  name: argocd-image-updater
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argocd-image-updater
+  namespace: infra
+rules:
+  - apiGroups: [""]
+    resources: [secrets, configmaps]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-image-updater
+  namespace: infra
+subjects:
+  - kind: ServiceAccount
+    name: argocd-image-updater
+    namespace: infra
+roleRef:
+  kind: Role
+  name: argocd-image-updater
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-image-updater-config
+  namespace: infra
+  labels:
+    app.kubernetes.io/name: argocd-image-updater
+    app.kubernetes.io/part-of: argocd
+data:
+  registries.conf: |
+    registries:
+      - name: GitHub Container Registry
+        api_url: https://ghcr.io
+        prefix: ghcr.io
+        default: true
+        credentials: pullsecret:infra/ghcr-image-updater
+  log.level: info
+  applications_api: kubernetes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argocd-image-updater
+  namespace: infra
+  labels:
+    app.kubernetes.io/name: argocd-image-updater
+    app.kubernetes.io/part-of: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-image-updater
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argocd-image-updater
+        app.kubernetes.io/part-of: argocd
+    spec:
+      serviceAccountName: argocd-image-updater
+      containers:
+        - name: argocd-image-updater
+          image: quay.io/argoprojlabs/argocd-image-updater:v0.15.1
+          ports:
+            - containerPort: 8080
+              name: metrics
+          command: ["/usr/local/bin/argocd-image-updater", "run"]
+          env:
+            - name: APPLICATIONS_API
+              valueFrom:
+                configMapKeyRef:
+                  name: argocd-image-updater-config
+                  key: applications_api
+            - name: LOG_LEVEL
+              value: info
+          volumeMounts:
+            - name: registries-conf
+              mountPath: /app/config
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: 50m
+            limits:
+              memory: 256Mi
+              cpu: 200m
+      volumes:
+        - name: registries-conf
+          configMap:
+            name: argocd-image-updater-config
+            items:
+              - key: registries.conf
+                path: registries.conf
