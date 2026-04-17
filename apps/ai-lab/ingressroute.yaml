@@ -24,8 +24,20 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Authentik outpost callback path — MUST NOT be behind the auth middleware
+    - match: Host(`ai.aymenmastouri.io`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      priority: 15
+      services:
+        - name: authentik-server
+          port: 9000
+    # Protected AI Lab portal
     - match: Host(`ai.aymenmastouri.io`)
       kind: Rule
+      priority: 10
+      middlewares:
+        - name: authentik-forwardauth
+          namespace: apps
       services:
         - name: ai-lab
           port: 80
