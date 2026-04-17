@@ -11,8 +11,18 @@ spec:
   entryPoints:
     - websecure
   routes:
+    - match: Host(`sdlc.aymenmastouri.io`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      priority: 15
+      services:
+        - name: authentik-server
+          port: 9000
     - match: Host(`sdlc.aymenmastouri.io`)
       kind: Rule
+      priority: 10
+      middlewares:
+        - name: authentik-forwardauth
+          namespace: apps
       services:
         - name: sdlc-pilot-frontend
           port: 80
@@ -32,8 +42,18 @@ spec:
   entryPoints:
     - websecure
   routes:
+    - match: Host(`sdlc-api.aymenmastouri.io`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      priority: 15
+      services:
+        - name: authentik-server
+          port: 9000
     - match: Host(`sdlc-api.aymenmastouri.io`)
       kind: Rule
+      priority: 10
+      middlewares:
+        - name: authentik-forwardauth
+          namespace: apps
       services:
         - name: sdlc-pilot-backend
           port: 8001
