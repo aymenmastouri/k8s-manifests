@@ -11,8 +11,22 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Authentik outpost callback path — MUST NOT be behind the auth middleware
+    - match: Host(`llm.aymenmastouri.io`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      priority: 15
+      services:
+        - name: authentik-server
+          port: 9000
+    # Protected UI + public API via Ingress. In-cluster apps (open-webui,
+    # sdlc-pilot) hit http://litellm:4000 with LITELLM_MASTER_KEY and
+    # bypass the ingress entirely, so adding SSO does not break them.
     - match: Host(`llm.aymenmastouri.io`)
       kind: Rule
+      priority: 10
+      middlewares:
+        - name: authentik-forwardauth
+          namespace: apps
       services:
         - name: litellm
           port: 4000
