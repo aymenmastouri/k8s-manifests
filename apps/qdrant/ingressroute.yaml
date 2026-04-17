@@ -11,8 +11,21 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Authentik outpost callback path — MUST NOT be behind the auth middleware
+    - match: Host(`qdrant.aymenmastouri.io`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      priority: 15
+      services:
+        - name: authentik-server
+          port: 9000
+    # Protected dashboard + API via Ingress (in-cluster clients bypass
+    # this by using qdrant.apps.svc.cluster.local + API-key directly).
     - match: Host(`qdrant.aymenmastouri.io`)
       kind: Rule
+      priority: 10
+      middlewares:
+        - name: authentik-forwardauth
+          namespace: apps
       services:
         - name: qdrant
           port: 6333
