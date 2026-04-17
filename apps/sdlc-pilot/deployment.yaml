@@ -84,6 +84,11 @@ spec:
               value: "8001"
             - name: DASHBOARD_CORS_ORIGINS
               value: "https://sdlc.aymenmastouri.io"
+            # Defence-in-depth: reject requests lacking X-Authentik-Username
+            # (Traefik ForwardAuth + Authentik outpost is the primary gate;
+            # this middleware blocks pod-direct bypass within the cluster.)
+            - name: FORWARD_AUTH_ENABLED
+              value: "true"
             # LiteLLM integration
             - name: LITELLM_API_BASE
               value: "http://litellm:4000/v1"
