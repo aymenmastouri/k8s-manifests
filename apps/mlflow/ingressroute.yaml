@@ -11,8 +11,20 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Authentik outpost callback path — MUST NOT be behind the auth middleware
+    - match: Host(`mlflow.aymenmastouri.io`) && PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      priority: 15
+      services:
+        - name: authentik-server
+          port: 9000
+    # Protected MLflow UI + API
     - match: Host(`mlflow.aymenmastouri.io`)
       kind: Rule
+      priority: 10
+      middlewares:
+        - name: authentik-forwardauth
+          namespace: apps
       services:
         - name: mlflow
           port: 5000
