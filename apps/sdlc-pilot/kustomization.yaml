@@ -4,6 +4,7 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - ingressroute.yaml
+  - middleware.yaml
   - sealed-secret.yaml
 images:
   - name: ghcr.io/aymenmastouri/aicodegencrew-backend
