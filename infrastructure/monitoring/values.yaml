@@ -9,6 +9,11 @@ grafana:
   persistence:
     enabled: true
     size: 2Gi
+  # PVC already has correct ownership from previous runs. init-chown-data
+  # was crash-looping after the helm upgrade (runs as a non-root user
+  # and chown fails on pre-existing dirs it didn't create). Skip it.
+  initChownData:
+    enabled: false
   resources:
     requests:
       memory: 128Mi
@@ -22,6 +27,31 @@ grafana:
   # Default Dashboards
   defaultDashboardsEnabled: true
   defaultDashboardsTimezone: Europe/Berlin
+
+  # ─── Authentik OIDC (native integration) ────────────────────────────
+  # CLIENT_ID + CLIENT_SECRET come from the grafana-oidc SealedSecret.
+  envFromSecret: grafana-oidc
+  grafana.ini:
+    server:
+      root_url: https://grafana.aymenmastouri.io
+    auth:
+      signout_redirect_url: https://auth.aymenmastouri.io/application/o/grafana/end-session/
+      oauth_auto_login: true
+      disable_login_form: true
+    auth.generic_oauth:
+      enabled: true
+      name: Authentik
+      # client_id / client_secret injected via envFromSecret:
+      #   GF_AUTH_GENERIC_OAUTH_CLIENT_ID / GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+      scopes: "openid profile email"
+      empty_scopes: false
+      auth_url: https://auth.aymenmastouri.io/application/o/authorize/
+      token_url: https://auth.aymenmastouri.io/application/o/token/
+      api_url: https://auth.aymenmastouri.io/application/o/userinfo/
+      allow_sign_up: true
+      role_attribute_path: contains(groups[*], 'authentik Admins') && 'Admin' || 'Viewer'
+      role_attribute_strict: false
+      use_pkce: true
 
 # ─── Prometheus ──────────────────────────────────────────────────────
 prometheus:
