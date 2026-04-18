@@ -90,6 +90,9 @@ spec:
               value: "true"
             - name: NEXT_PUBLIC_SIGN_UP_DISABLED
               value: "true"
+            # Kill the email/password form — SSO is the only login method
+            - name: AUTH_DISABLE_USERNAME_PASSWORD
+              value: "true"
           resources:
             requests:
               memory: 128Mi
