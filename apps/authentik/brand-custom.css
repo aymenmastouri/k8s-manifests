@@ -25,13 +25,22 @@
   --noise: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.95'/%3E%3C/svg%3E");
 }
 
-/* ── KILL distractions (flow-only custom elements) ───────────── */
+/* ── KILL distractions (flow-only custom elements + locale toggler) ─ */
 ak-brand-links,
 ak-flow-inspector,
 ak-locale-selector,
+ak-locale-context-toggle,
+ak-locale-toggler,
+ak-locale-chooser,
+[part="locale-select"],
+[part*="locale"],
 .pf-c-login__footer-band,
 .pf-c-login__footer,
 .pf-c-login__footer-item {
+  display: none !important;
+}
+ak-flow-executor::part(locale-select),
+ak-flow-executor::part(locale) {
   display: none !important;
 }
 
@@ -90,8 +99,20 @@ ak-locale-selector,
 /* Only transparentize containers so our bg shows */
 .pf-c-login__container { background: transparent !important; }
 
-/* ── Page header (above the card): custom sphere + heading ─── */
-.pf-c-login__header { padding-top: 4rem !important; }
+/* ── Tighter layout: bring sphere+heading close to the card ── */
+.pf-c-login__header {
+  padding: 3rem 1rem 0 1rem !important;
+  margin-bottom: 0 !important;
+}
+.pf-c-login__main {
+  max-width: 460px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+.pf-c-login__container {
+  max-width: 100% !important;
+  padding: 0 1.5rem 3rem 1.5rem !important;
+}
 .pf-c-login__header img,
 .pf-c-brand { display: none !important; }
 
@@ -231,8 +252,9 @@ ak-locale-selector,
 .pf-c-login input::placeholder,
 .pf-c-login .pf-c-form-control::placeholder { color: var(--c-fg-subtle) !important; }
 
-/* ── Button: PatternFly CSS vars (inherit through shadow DOM) ── */
+/* ── PatternFly CSS vars (inherit through shadow DOM) ──────── */
 .pf-c-login {
+  /* Button */
   --pf-c-button--m-primary--BackgroundColor:        #8B5CF6 !important;
   --pf-c-button--m-primary--hover--BackgroundColor: #6D44EF !important;
   --pf-c-button--m-primary--focus--BackgroundColor: #6D44EF !important;
@@ -240,10 +262,25 @@ ak-locale-selector,
   --pf-c-button--m-primary--Color: #ffffff !important;
   --pf-c-button--BorderRadius: 10px !important;
   --pf-c-button--FontWeight: 600 !important;
+  /* Form control (input) — override the white PatternFly default */
+  --pf-c-form-control--BackgroundColor: rgba(20,20,30,0.55) !important;
+  --pf-c-form-control--hover--BackgroundColor: rgba(28,28,42,0.65) !important;
+  --pf-c-form-control--focus--BackgroundColor: rgba(30,30,45,0.75) !important;
+  --pf-c-form-control--Color: #EDEDF2 !important;
+  --pf-c-form-control--BorderColor: rgba(255,255,255,0.08) !important;
+  --pf-c-form-control--hover--BorderColor: rgba(255,255,255,0.16) !important;
+  --pf-c-form-control--focus--BorderColor: #8B5CF6 !important;
+  --pf-c-form-control--BorderBottomColor: rgba(255,255,255,0.08) !important;
+  --pf-c-form-control--BorderTopColor: rgba(255,255,255,0.08) !important;
+  --pf-c-form-control--placeholder--Color: #555565 !important;
+  /* Global */
   --pf-global--primary-color--100: #8B5CF6 !important;
   --pf-global--primary-color--200: #6D44EF !important;
   --pf-global--link--Color: #1CE3C2 !important;
   --pf-global--link--Color--hover: #ffffff !important;
+  --pf-global--BackgroundColor--100: #0A0A10 !important;
+  --pf-global--BackgroundColor--dark-100: #0A0A10 !important;
+  --pf-global--Color--100: #EDEDF2 !important;
   --ak-accent: #8B5CF6 !important;
 }
 
