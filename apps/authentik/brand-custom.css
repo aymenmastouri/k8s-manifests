@@ -1,14 +1,12 @@
 /* ================================================================
    Aymen AI Lab · Authentik — Aurora / Geist edition
-   SCOPED: only the login flow (`ak-flow-executor`) is touched.
-   Admin + User interfaces keep their default look.
+   SCOPE: everything anchored on `.pf-c-login` (login-flow only).
+   Admin + User UI untouched (body/html not styled).
    ================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
 
-/* ---------------------------------------------------------------
-   Variables (no paint — safe to live globally)
-   --------------------------------------------------------------- */
+/* :root vars are harmless on other pages (no paint). */
 :root, :host {
   --c-bg-0: #0A0A10;
   --c-fg: #EDEDF2;
@@ -36,84 +34,71 @@
 }
 
 /* ================================================================
-   ↓↓↓  Everything below is scoped to `body:has(ak-flow-executor)`  ↓↓↓
-   That element only exists on the login flow — admin and user
-   interfaces are untouched.
+   EVERYTHING from here is under `.pf-c-login` — login-flow only.
+   Admin + User keep their default look.
    ================================================================ */
 
-/* ── Shell ────────────────────────────────────────────────────── */
-body:has(ak-flow-executor) {
+/* ── The login root — paints itself (full-bleed), not body ──── */
+.pf-c-login {
   min-height: 100vh;
-  font-family: 'Geist', 'Inter', system-ui, -apple-system, sans-serif !important;
+  width: 100%;
+  background-color: var(--c-bg-0) !important;
   color: var(--c-fg) !important;
+  font-family: 'Geist', 'Inter', system-ui, -apple-system, sans-serif !important;
   letter-spacing: -0.006em;
   font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
-  background-color: var(--c-bg-0) !important;
-  overflow-x: hidden;
   position: relative;
+  overflow-x: hidden;
+  display: grid !important;
+  place-items: center;
+  isolation: isolate;
 }
-body:has(ak-flow-executor) .pf-c-background-image,
-body:has(ak-flow-executor) .pf-c-login,
-body:has(ak-flow-executor) .pf-c-login__container,
-body:has(ak-flow-executor) ak-flow-executor {
+
+/* Hide PF stock background image + its filter */
+.pf-c-login__container,
+.pf-c-background-image {
   background: transparent !important;
 }
-body:has(ak-flow-executor) .pf-c-background-image::before,
-body:has(ak-flow-executor) .pf-c-background-image__filter { display: none !important; }
+.pf-c-background-image::before,
+.pf-c-background-image__filter { display: none !important; }
 
-/* ── Layer Z-4: Drifting dual aurora ─────────────────────────── */
-body:has(ak-flow-executor)::before {
+/* ── Layer 1: Dual aurora inside the login canvas ───────────── */
+.pf-c-login::before {
   content: '';
-  position: fixed; inset: -10%;
-  z-index: -4;
+  position: absolute; inset: -10%;
+  z-index: -3;
   background:
     radial-gradient(900px 700px at 85% 12%,  rgba(28,227,194,0.12) 0%, transparent 55%),
     radial-gradient(1000px 800px at 8% 92%, rgba(139,92,246,0.14) 0%, transparent 55%),
-    radial-gradient(700px  500px at 52% 50%, rgba(54,46,120,0.18) 0%, transparent 65%),
-    linear-gradient(180deg, #09090F 0%, #0D0D17 100%);
-  animation: aiflow-aurora-drift 48s var(--ease) infinite alternate;
+    radial-gradient(700px  500px at 52% 50%, rgba(54,46,120,0.18) 0%, transparent 65%);
+  animation: aiflow-aurora 48s var(--ease) infinite alternate;
   filter: blur(0.5px) saturate(115%);
   pointer-events: none;
 }
-@keyframes aiflow-aurora-drift {
+@keyframes aiflow-aurora {
   0%   { transform: translate3d(0,0,0) scale(1);         filter: hue-rotate(0deg) saturate(115%); }
   100% { transform: translate3d(-2%,1.5%,0) scale(1.06); filter: hue-rotate(14deg) saturate(125%); }
 }
 
-/* ── Layer Z-3: SVG grid ─────────────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-login::before {
+/* ── Layer 2: Subtle 48px grid with edge fade + film-grain ──── */
+.pf-c-login::after {
   content: '';
-  position: fixed; inset: 0;
-  z-index: -3;
+  position: absolute; inset: 0;
+  z-index: -2;
   background-image:
+    var(--noise),
     linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-size: 240px 240px, 48px 48px, 48px 48px;
   mask-image: radial-gradient(ellipse 90% 70% at 50% 50%, #000 25%, transparent 85%);
   -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 50%, #000 25%, transparent 85%);
+  opacity: 0.9;
   pointer-events: none;
 }
 
-/* ── Layer Z-2: Film-grain noise ─────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-login::after {
-  content: '';
-  position: fixed; inset: 0;
-  z-index: -2;
-  background-image: var(--noise);
-  background-size: 240px 240px;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-
-/* ── Layout grid ─────────────────────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-login {
-  min-height: 100vh;
-  display: grid !important;
-  place-items: center;
-}
-body:has(ak-flow-executor) .pf-c-login__container {
+/* ── Layout grid (card on desktop = split, mobile = stacked) ── */
+.pf-c-login__container {
   display: grid !important;
   grid-template-columns: 1fr !important;
   gap: 0 !important;
@@ -122,52 +107,53 @@ body:has(ak-flow-executor) .pf-c-login__container {
   padding: 2rem 1.5rem !important;
   min-height: 100vh;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 @media (min-width: 1024px) {
-  body:has(ak-flow-executor) .pf-c-login__container {
+  .pf-c-login__container {
     grid-template-columns: 520px 460px !important;
     gap: 6rem !important;
     padding: 0 5rem !important;
     max-width: 1280px !important;
     justify-content: center;
   }
-  body:has(ak-flow-executor) .pf-c-login__header {
+  .pf-c-login__header {
     grid-column: 1; grid-row: 1;
     align-self: center;
     padding: 0 !important;
     max-width: 520px;
   }
-  body:has(ak-flow-executor) .pf-c-login__main { grid-column: 2; grid-row: 1; }
+  .pf-c-login__main { grid-column: 2; grid-row: 1; }
 }
 
-/* Hide the default logo */
-body:has(ak-flow-executor) .pf-c-login__header img,
-body:has(ak-flow-executor) .pf-c-brand { display: none !important; }
+/* Stock logo gone */
+.pf-c-login__header img,
+.pf-c-brand { display: none !important; }
 
-/* ── Brand-mark sphere ───────────────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-login__header {
+/* ── Brand sphere + display heading ─────────────────────────── */
+.pf-c-login__header {
   position: relative;
 }
-body:has(ak-flow-executor) .pf-c-login__header::before {
+.pf-c-login__header::before {
   content: '';
   display: block;
   width: 52px; height: 52px;
   border-radius: 14px;
-  background:
-    conic-gradient(from 210deg at 50% 50%,
-      var(--c-teal) 0deg,
-      var(--c-violet) 120deg,
-      #E879F9 220deg,
-      var(--c-teal) 360deg);
+  background: conic-gradient(from 210deg at 50% 50%,
+    var(--c-teal) 0deg,
+    var(--c-violet) 120deg,
+    #E879F9 220deg,
+    var(--c-teal) 360deg);
   box-shadow:
     0 16px 50px -8px var(--c-accent-glow),
     0 4px 18px -2px rgba(28,227,194,0.25),
     inset 0 1px 0 rgba(255,255,255,0.30),
     inset 0 -10px 20px rgba(0,0,0,0.25);
   margin-bottom: 2rem;
-  animation: aiflow-sphere-rotate 18s linear infinite;
+  animation: aiflow-sphere 18s linear infinite;
 }
-body:has(ak-flow-executor) .pf-c-login__header::after {
+.pf-c-login__header::after {
   content: 'Sign in to\A Aymen AI Lab';
   white-space: pre-line;
   display: block;
@@ -182,20 +168,20 @@ body:has(ak-flow-executor) .pf-c-login__header::after {
   -webkit-text-fill-color: transparent;
   margin-bottom: 1.25rem;
 }
-@keyframes aiflow-sphere-rotate {
+@keyframes aiflow-sphere {
   from { transform: rotate(0deg);   }
   to   { transform: rotate(360deg); }
 }
 @media (max-width: 1023px) {
-  body:has(ak-flow-executor) .pf-c-login__header { text-align: center; padding: 2rem 1rem 0 !important; }
-  body:has(ak-flow-executor) .pf-c-login__header::before { margin: 0 auto 1.25rem auto; width: 44px; height: 44px; }
-  body:has(ak-flow-executor) .pf-c-login__header::after  { font-size: 1.875rem; margin-bottom: 0.75rem; }
+  .pf-c-login__header { text-align: center; padding: 2rem 1rem 0 !important; }
+  .pf-c-login__header::before { margin: 0 auto 1.25rem auto; width: 44px; height: 44px; }
+  .pf-c-login__header::after  { font-size: 1.875rem; margin-bottom: 0.75rem; }
 }
-body:has(ak-flow-executor) .pf-c-login__header-desc,
-body:has(ak-flow-executor) .pf-c-login__main-desc { display: none !important; }
+.pf-c-login__header-desc,
+.pf-c-login__main-desc { display: none !important; }
 
-/* ── Auth card ───────────────────────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-login__main {
+/* ── Auth card ─────────────────────────────────────────────── */
+.pf-c-login__main {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%),
     rgba(18,18,26,0.55) !important;
@@ -209,21 +195,20 @@ body:has(ak-flow-executor) .pf-c-login__main {
   -webkit-backdrop-filter: blur(24px) saturate(160%);
   box-shadow:
     inset 0 1px 0 var(--c-inset),
-    0 1px 0 rgba(255,255,255,0.02),
     0 30px 80px -20px rgba(0,0,0,0.75),
     0 10px 30px -8px rgba(139,92,246,0.18),
     0 2px 8px -2px rgba(28,227,194,0.08);
 }
-body:has(ak-flow-executor) .pf-c-login__main::before {
+.pf-c-login__main::before {
   content: '';
   position: absolute; inset: 0;
   border-radius: inherit;
   padding: 1px;
   background: linear-gradient(180deg,
-      rgba(255,255,255,0.18),
-      rgba(139,92,246,0.12) 25%,
-      rgba(28,227,194,0.06) 55%,
-      transparent);
+    rgba(255,255,255,0.18),
+    rgba(139,92,246,0.12) 25%,
+    rgba(28,227,194,0.06) 55%,
+    transparent);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
@@ -231,19 +216,19 @@ body:has(ak-flow-executor) .pf-c-login__main::before {
   pointer-events: none;
 }
 
-body:has(ak-flow-executor) .pf-c-login__main-header {
+.pf-c-login__main-header {
   background: transparent !important;
   border-bottom: 1px solid var(--c-border) !important;
   padding: 0 0 1.5rem 0 !important;
   margin-bottom: 1.75rem !important;
 }
-body:has(ak-flow-executor) .pf-c-login__main-body,
-body:has(ak-flow-executor) .pf-c-login__main-footer,
-body:has(ak-flow-executor) .pf-c-login__main-footer-band {
+.pf-c-login__main-body,
+.pf-c-login__main-footer,
+.pf-c-login__main-footer-band {
   background: transparent !important;
   border-color: transparent !important;
 }
-body:has(ak-flow-executor) .pf-c-title {
+.pf-c-login .pf-c-title {
   font-family: 'Geist','Inter',sans-serif !important;
   color: var(--c-fg) !important;
   font-weight: 600 !important;
@@ -251,15 +236,16 @@ body:has(ak-flow-executor) .pf-c-title {
   letter-spacing: -0.015em !important;
   line-height: 1.3 !important;
 }
-body:has(ak-flow-executor) .pf-c-login__main-header > p,
-body:has(ak-flow-executor) .pf-c-login__main-header > small,
-body:has(ak-flow-executor) .pf-c-login__main-header-desc { display: none !important; }
+.pf-c-login__main-header > p,
+.pf-c-login__main-header > small,
+.pf-c-login__main-header-desc { display: none !important; }
 
-/* ── Inputs ─────────────────────────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-form__group { margin-bottom: 1.1rem !important; }
-body:has(ak-flow-executor) .pf-c-form__label,
-body:has(ak-flow-executor) .pf-c-form__group-label label,
-body:has(ak-flow-executor) label {
+/* ── Forms (scoped under .pf-c-login so admin is untouched) ── */
+.pf-c-login .pf-c-form__group { margin-bottom: 1.1rem !important; }
+
+.pf-c-login .pf-c-form__label,
+.pf-c-login .pf-c-form__group-label label,
+.pf-c-login label {
   color: var(--c-fg-mid) !important;
   font-family: 'Geist','Inter',sans-serif !important;
   font-weight: 500 !important;
@@ -267,14 +253,14 @@ body:has(ak-flow-executor) label {
   letter-spacing: 0.005em;
   margin-bottom: 0.5rem !important;
 }
-body:has(ak-flow-executor) .pf-c-form-control,
-body:has(ak-flow-executor) input[type="text"],
-body:has(ak-flow-executor) input[type="email"],
-body:has(ak-flow-executor) input[type="password"],
-body:has(ak-flow-executor) input[type="tel"],
-body:has(ak-flow-executor) input[type="url"],
-body:has(ak-flow-executor) textarea,
-body:has(ak-flow-executor) select {
+.pf-c-login .pf-c-form-control,
+.pf-c-login input[type="text"],
+.pf-c-login input[type="email"],
+.pf-c-login input[type="password"],
+.pf-c-login input[type="tel"],
+.pf-c-login input[type="url"],
+.pf-c-login textarea,
+.pf-c-login select {
   background: rgba(20,20,30,0.45) !important;
   border: 1px solid var(--c-border) !important;
   color: var(--c-fg) !important;
@@ -286,28 +272,28 @@ body:has(ak-flow-executor) select {
   transition: border-color 160ms var(--ease), background 160ms var(--ease), box-shadow 200ms var(--ease) !important;
   box-shadow: inset 0 1px 0 var(--c-inset) !important;
 }
-body:has(ak-flow-executor) .pf-c-form-control:hover,
-body:has(ak-flow-executor) input:hover {
+.pf-c-login .pf-c-form-control:hover,
+.pf-c-login input:hover {
   border-color: var(--c-border-hi) !important;
   background: rgba(28,28,42,0.6) !important;
 }
-body:has(ak-flow-executor) .pf-c-form-control:focus,
-body:has(ak-flow-executor) input:focus,
-body:has(ak-flow-executor) textarea:focus,
-body:has(ak-flow-executor) select:focus {
+.pf-c-login .pf-c-form-control:focus,
+.pf-c-login input:focus,
+.pf-c-login textarea:focus,
+.pf-c-login select:focus {
   outline: none !important;
   border-color: var(--c-violet) !important;
   box-shadow: inset 0 1px 0 var(--c-inset), 0 0 0 3px var(--c-accent-glow) !important;
   background: rgba(30,30,45,0.7) !important;
 }
-body:has(ak-flow-executor) .pf-c-form-control::placeholder,
-body:has(ak-flow-executor) input::placeholder {
+.pf-c-login .pf-c-form-control::placeholder,
+.pf-c-login input::placeholder {
   color: var(--c-fg-subtle) !important;
 }
 
-/* ── Primary CTA ─────────────────────────────────────────────── */
-body:has(ak-flow-executor) .pf-c-button.pf-m-primary,
-body:has(ak-flow-executor) button[type="submit"].pf-c-button {
+/* Primary CTA */
+.pf-c-login .pf-c-button.pf-m-primary,
+.pf-c-login button[type="submit"].pf-c-button {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 50%),
     linear-gradient(135deg, var(--c-violet) 0%, var(--c-violet-lo) 100%) !important;
@@ -330,48 +316,43 @@ body:has(ak-flow-executor) button[type="submit"].pf-c-button {
     0 2px 6px -2px rgba(28,227,194,0.08) !important;
   transition: transform 150ms var(--ease-spring), box-shadow 200ms var(--ease) !important;
 }
-body:has(ak-flow-executor) .pf-c-button.pf-m-primary:hover {
+.pf-c-login .pf-c-button.pf-m-primary:hover {
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.35),
     0 14px 30px -8px var(--c-accent-glow),
     0 4px 12px -4px rgba(28,227,194,0.15) !important;
 }
-body:has(ak-flow-executor) .pf-c-button.pf-m-primary:active { transform: translateY(0); }
-body:has(ak-flow-executor) .pf-c-button.pf-m-primary:focus-visible {
-  outline: 2px solid var(--c-teal) !important;
-  outline-offset: 2px;
-}
+.pf-c-login .pf-c-button.pf-m-primary:active { transform: translateY(0); }
 
 /* Links */
-body:has(ak-flow-executor) .pf-c-button.pf-m-link,
-body:has(ak-flow-executor) .pf-c-login__main-footer a,
-body:has(ak-flow-executor) a {
+.pf-c-login .pf-c-button.pf-m-link,
+.pf-c-login__main-footer a,
+.pf-c-login a {
   color: var(--c-teal) !important;
   text-decoration: none !important;
   font-weight: 500;
   transition: color 150ms var(--ease);
 }
-body:has(ak-flow-executor) .pf-c-button.pf-m-link:hover,
-body:has(ak-flow-executor) a:hover { color: #fff !important; }
+.pf-c-login .pf-c-button.pf-m-link:hover,
+.pf-c-login a:hover { color: #fff !important; }
 
-/* Helper text */
-body:has(ak-flow-executor) .pf-c-login__main-footer {
+.pf-c-login .pf-c-login__main-footer {
   margin-top: 1.75rem !important;
   padding-top: 1.5rem !important;
   border-top: 1px solid var(--c-border) !important;
   color: var(--c-fg-muted) !important;
   font-size: 0.8125rem;
 }
-body:has(ak-flow-executor) .pf-c-form__helper-text,
-body:has(ak-flow-executor) small,
-body:has(ak-flow-executor) .text-muted {
+.pf-c-login .pf-c-form__helper-text,
+.pf-c-login small,
+.pf-c-login .text-muted {
   color: var(--c-fg-muted) !important;
   font-size: 0.8125rem !important;
 }
 
 /* Alerts */
-body:has(ak-flow-executor) .pf-c-alert {
+.pf-c-login .pf-c-alert {
   background: rgba(20,20,30,0.6) !important;
   border: 1px solid var(--c-border) !important;
   border-radius: var(--radius-sm) !important;
@@ -379,20 +360,20 @@ body:has(ak-flow-executor) .pf-c-alert {
   padding: 0.75rem 1rem !important;
   box-shadow: inset 0 1px 0 var(--c-inset) !important;
 }
-body:has(ak-flow-executor) .pf-c-alert.pf-m-danger {
+.pf-c-login .pf-c-alert.pf-m-danger {
   background: rgba(239,68,68,0.08) !important;
   border-color: rgba(239,68,68,0.28) !important;
   color: #fecaca !important;
 }
-body:has(ak-flow-executor) .pf-c-alert.pf-m-success {
+.pf-c-login .pf-c-alert.pf-m-success {
   background: rgba(34,197,94,0.08) !important;
   border-color: rgba(34,197,94,0.28) !important;
   color: #bbf7d0 !important;
 }
 
 /* Status pill */
-body:has(ak-flow-executor) .pf-c-login > footer,
-body:has(ak-flow-executor) .pf-c-login__footer {
+.pf-c-login > footer,
+.pf-c-login__footer {
   position: fixed !important;
   bottom: 1.5rem !important;
   right: 1.5rem !important;
@@ -413,7 +394,7 @@ body:has(ak-flow-executor) .pf-c-login__footer {
   z-index: 50;
   box-shadow: inset 0 1px 0 var(--c-inset), 0 8px 24px -6px rgba(0,0,0,0.6);
 }
-body:has(ak-flow-executor) .pf-c-login__footer::before {
+.pf-c-login__footer::before {
   content: '';
   width: 7px; height: 7px;
   background: var(--c-ok);
@@ -421,20 +402,19 @@ body:has(ak-flow-executor) .pf-c-login__footer::before {
   box-shadow: 0 0 0 3px var(--c-ok-glow);
   animation: aiflow-pulse 2.4s var(--ease) infinite;
 }
-body:has(ak-flow-executor) .pf-c-login__footer::after {
+.pf-c-login__footer::after {
   content: 'AI Lab · Berlin · v2026.1';
 }
-body:has(ak-flow-executor) .pf-c-login__footer-item { display: none !important; }
+.pf-c-login__footer-item { display: none !important; }
 
 @keyframes aiflow-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.75; transform: scale(1.2); }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  body:has(ak-flow-executor)::before,
-  body:has(ak-flow-executor) .pf-c-login__header::before,
-  body:has(ak-flow-executor) .pf-c-login__footer::before { animation: none !important; }
-  body:has(ak-flow-executor) .pf-c-button.pf-m-primary { transition: none !important; }
+  .pf-c-login::before,
+  .pf-c-login__header::before,
+  .pf-c-login__footer::before { animation: none !important; }
+  .pf-c-login .pf-c-button.pf-m-primary { transition: none !important; }
 }
