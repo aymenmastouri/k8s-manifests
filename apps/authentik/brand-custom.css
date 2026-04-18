@@ -231,6 +231,16 @@ body::after {
   line-height: 1.3 !important;
 }
 
+/* Hide the dynamic app-specific subtitle that Authentik injects
+   ("Log in to continue to <App Name>."). The big brand-panel
+   headline already sets context, and showing one app name would
+   be wrong for a multi-app SSO portal. */
+.pf-c-login__main-header > p,
+.pf-c-login__main-header > small,
+.pf-c-login__main-header-desc {
+  display: none !important;
+}
+
 .pf-c-login__main-body,
 .pf-c-login__main-footer,
 .pf-c-login__main-footer-band {
