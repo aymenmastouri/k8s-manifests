@@ -1,0 +1,22 @@
+# Traefik rate-limit middleware for Authentik's public auth endpoints.
+# Protects /application/o/authorize/ (OIDC start) and /api/v3/ (API)
+# from credential-stuffing and enumeration.
+#
+# Token-bucket: avg 30 req/s per client IP, burst 60. Tuned so normal
+# browser activity (a few redirects per minute) never trips; automated
+# abuse hits the ceiling fast.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: authentik-ratelimit
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: ai-lab
+spec:
+  rateLimit:
+    average: 30      # requests/s averaged
+    burst: 60        # short bursts allowed
+    period: 1s
+    sourceCriterion:
+      ipStrategy:
+        depth: 1     # trust X-Forwarded-For from the (single) LB hop
