@@ -86,8 +86,13 @@ spec:
               value: "state"
             - name: AUTH_CUSTOM_SCOPE
               value: "openid email profile"
+            # AUTH_DISABLE_SIGNUP=true blocks SSO first-login too (Langfuse
+            # creates a local user row on first SSO login). Keep signup ON so
+            # Authentik users can bootstrap into Langfuse. The credentials
+            # provider is off entirely, so only people with Authentik accounts
+            # can actually sign up — matches what we want.
             - name: AUTH_DISABLE_SIGNUP
-              value: "true"
+              value: "false"
             - name: NEXT_PUBLIC_SIGN_UP_DISABLED
               value: "true"
             # Kill the email/password form — SSO is the only login method
