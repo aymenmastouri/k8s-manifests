@@ -1,0 +1,21 @@
+# ArgoCD RBAC — maps Authentik groups to ArgoCD roles.
+#
+# OIDC config in argocd-cm requests the `groups` claim. Authentik's
+# "authentik Admins" group (is_superuser=true) is mapped to ArgoCD
+# role:admin (full cluster access). All other OIDC users keep the
+# default role:readonly. Local `admin` user remains untouched (uses
+# admin.password from argocd-secret).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: infra
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  policy.default: role:readonly
+  scopes: "[groups]"
+  policy.csv: |
+    # Authentik Admins group -> full admin on ArgoCD
+    g, authentik Admins, role:admin

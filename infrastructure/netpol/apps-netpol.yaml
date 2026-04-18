@@ -1,0 +1,63 @@
+# ─── NetworkPolicies for `apps` namespace ────────────────────────
+# Strategy: default-deny ingress from outside the namespace, then
+# explicitly allow traffic from Traefik (kube-system) and Prometheus
+# (monitoring) scraping. Same-namespace pod-to-pod traffic stays open
+# so app→DB and app→app calls (e.g. sdlc-pilot-backend→qdrant) keep
+# working without per-pair rules.
+#
+# Egress is intentionally left unrestricted — tightening egress needs
+# care (Authentik needs LE, open-webui needs OpenAI, etc.) and is a
+# second hardening pass.
+# ────────────────────────────────────────────────────────────────
+
+# 1) default-deny ingress from OTHER namespaces (keeps intra-ns open)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-cross-namespace-ingress
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: ai-lab
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    # Only from pods within the apps namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: apps
+---
+# 2) allow Traefik (kube-system) to reach all apps pods on any port
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traefik-ingress
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: ai-lab
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+---
+# 3) allow Prometheus (monitoring) to scrape metrics endpoints
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: ai-lab
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring

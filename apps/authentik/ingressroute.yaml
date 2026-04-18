@@ -13,6 +13,9 @@ spec:
   routes:
     - match: Host(`auth.aymenmastouri.io`)
       kind: Rule
+      middlewares:
+        - name: authentik-ratelimit
+          namespace: apps
       services:
         - name: authentik-server
           port: 9000
