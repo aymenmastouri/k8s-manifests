@@ -1,0 +1,160 @@
+/* =============================================================
+   AI Lab — Authentik brand theme
+   Modern, restrained dark UI. Inter typography, violet accent.
+   ============================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root, :host {
+  --ai-bg: #08080b;
+  --ai-bg-2: #0d0d14;
+  --ai-fg: #eceef2;
+  --ai-fg-muted: rgba(236,238,242,0.55);
+  --ai-border: rgba(255,255,255,0.08);
+  --ai-border-hi: rgba(255,255,255,0.18);
+  --ai-card: rgba(255,255,255,0.025);
+  --ai-accent: #7c5cff;
+  --ai-accent-2: #a78bfa;
+  --ai-radius: 14px;
+  --ai-radius-sm: 8px;
+}
+
+body, .pf-c-background-image, .pf-c-login {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(124,92,255,0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 110%, rgba(167,139,250,0.10), transparent 50%),
+    linear-gradient(180deg, var(--ai-bg) 0%, var(--ai-bg-2) 100%) !important;
+  background-attachment: fixed !important;
+  color: var(--ai-fg) !important;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+  letter-spacing: -0.005em;
+}
+
+.pf-c-background-image::before, .pf-c-background-image__filter {
+  display: none !important;
+}
+
+.pf-c-login__main {
+  background: var(--ai-card) !important;
+  border: 1px solid var(--ai-border) !important;
+  border-radius: var(--ai-radius) !important;
+  box-shadow:
+    0 20px 60px -20px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  padding: 2.25rem 2rem !important;
+  max-width: 420px;
+}
+
+.pf-c-login__main-header, .pf-c-login__main-body,
+.pf-c-login__main-footer, .pf-c-login__main-footer-band {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.pf-c-login__main-header {
+  padding-bottom: 1.25rem !important;
+  border-bottom: 1px solid var(--ai-border) !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.pf-c-login__header img, .pf-c-brand { display: none !important; }
+
+.pf-c-login__header::before {
+  content: 'AI Lab';
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 0%, var(--ai-accent-2) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.25rem;
+}
+
+.pf-c-login__header::after {
+  content: 'Aymen Mastouri · Secure Access';
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--ai-fg-muted);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.75rem;
+}
+
+.pf-c-title, .pf-c-login__main-header h1 {
+  color: var(--ai-fg) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  font-size: 1.125rem !important;
+}
+
+.pf-c-form__label, .pf-c-form__group-label label {
+  color: var(--ai-fg) !important;
+  font-weight: 500 !important;
+  font-size: 0.8125rem !important;
+  letter-spacing: 0.01em;
+}
+
+.pf-c-form-control, input[type="text"], input[type="email"],
+input[type="password"], textarea, select {
+  background: rgba(255,255,255,0.02) !important;
+  border: 1px solid var(--ai-border) !important;
+  color: var(--ai-fg) !important;
+  border-radius: var(--ai-radius-sm) !important;
+  padding: 0.625rem 0.85rem !important;
+  font-size: 0.9375rem !important;
+  transition: border-color 150ms ease, background 150ms ease !important;
+  box-shadow: none !important;
+}
+.pf-c-form-control:hover { border-color: var(--ai-border-hi) !important; }
+.pf-c-form-control:focus, input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: var(--ai-accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.18) !important;
+  background: rgba(255,255,255,0.04) !important;
+}
+.pf-c-form-control::placeholder { color: rgba(236,238,242,0.35); }
+
+.pf-c-button.pf-m-primary, button[type="submit"].pf-c-button {
+  background: linear-gradient(135deg, var(--ai-accent) 0%, #6246ea 100%) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: var(--ai-radius-sm) !important;
+  padding: 0.7rem 1.1rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px -4px rgba(124,92,255,0.45) !important;
+  transition: transform 120ms ease, box-shadow 150ms ease !important;
+}
+.pf-c-button.pf-m-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -4px rgba(124,92,255,0.6) !important;
+}
+.pf-c-button.pf-m-primary:active { transform: translateY(0); }
+
+.pf-c-button.pf-m-link, a {
+  color: var(--ai-accent-2) !important;
+  text-decoration: none !important;
+}
+.pf-c-button.pf-m-link:hover, a:hover { color: #fff !important; }
+
+.pf-c-login__main-footer, .pf-c-form__helper-text, small, .text-muted {
+  color: var(--ai-fg-muted) !important;
+}
+
+.pf-c-alert.pf-m-danger, .pf-c-alert.pf-m-warning {
+  background: rgba(239,68,68,0.08) !important;
+  border: 1px solid rgba(239,68,68,0.25) !important;
+  color: #fecaca !important;
+  border-radius: var(--ai-radius-sm) !important;
+}
+
+.pf-c-login__footer-item img[alt*="authentik"], footer a[href*="goauthentik"] {
+  opacity: 0.35;
+  transition: opacity 150ms ease;
+}
+.pf-c-login__footer-item:hover img[alt*="authentik"] { opacity: 0.8; }
