@@ -157,7 +157,7 @@ body::after {
   position: relative;
 }
 .pf-c-login__header::after {
-  content: 'Welcome back\A Sign in to your AI Lab workspace';
+  content: 'Welcome\A Sign in to your AI Lab workspace';
   white-space: pre-line;
   display: block;
   font-size: 2.25rem;
