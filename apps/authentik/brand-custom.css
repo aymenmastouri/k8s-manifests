@@ -1,160 +1,439 @@
-/* =============================================================
-   AI Lab — Authentik brand theme
-   Modern, restrained dark UI. Inter typography, violet accent.
-   ============================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* ================================================================
+   AI Lab · Authentik — Premium Login Experience
+   Layout: split-screen brand panel + polished auth card
+   Design refs: Linear, Vercel, Supabase. No "dark mode only".
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root, :host {
-  --ai-bg: #08080b;
-  --ai-bg-2: #0d0d14;
-  --ai-fg: #eceef2;
-  --ai-fg-muted: rgba(236,238,242,0.55);
-  --ai-border: rgba(255,255,255,0.08);
-  --ai-border-hi: rgba(255,255,255,0.18);
-  --ai-card: rgba(255,255,255,0.025);
-  --ai-accent: #7c5cff;
-  --ai-accent-2: #a78bfa;
-  --ai-radius: 14px;
-  --ai-radius-sm: 8px;
+  /* Neutral system */
+  --c-bg:        #0a0a0f;
+  --c-bg-elev-1: #12121a;
+  --c-bg-elev-2: #1a1a24;
+  --c-fg:        #f5f5f7;
+  --c-fg-mid:    #c1c1cc;
+  --c-fg-muted:  #8a8a96;
+  --c-fg-subtle: #5a5a66;
+  --c-border:    rgba(255,255,255,0.07);
+  --c-border-hi: rgba(255,255,255,0.14);
+
+  /* Accent ramp */
+  --c-accent:      #7c5cff;
+  --c-accent-hi:   #a78bfa;
+  --c-accent-lo:   #5338d8;
+  --c-accent-glow: rgba(124,92,255,0.35);
+
+  /* Success + subtle colors */
+  --c-ok:     #22c55e;
+  --c-ok-glow:rgba(34,197,94,0.35);
+
+  /* Shape + motion */
+  --radius:      16px;
+  --radius-sm:   10px;
+  --radius-xs:   6px;
+  --ease:        cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-body, .pf-c-background-image, .pf-c-login {
+/* ── Global reset for Authentik flow shell ─────────────────────── */
+html, body,
+.pf-c-background-image,
+.pf-c-login,
+.pf-c-login__container,
+ak-flow-executor { background: transparent !important; }
+
+body,
+.pf-c-background-image {
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  color: var(--c-fg) !important;
+  letter-spacing: -0.006em;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--c-bg) !important;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.pf-c-background-image::before,
+.pf-c-background-image__filter { display: none !important; }
+
+/* ── Animated mesh-gradient scene ──────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: -2;
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(124,92,255,0.18), transparent 55%),
-    radial-gradient(900px 500px at 90% 110%, rgba(167,139,250,0.10), transparent 50%),
-    linear-gradient(180deg, var(--ai-bg) 0%, var(--ai-bg-2) 100%) !important;
-  background-attachment: fixed !important;
-  color: var(--ai-fg) !important;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
-  letter-spacing: -0.005em;
+    radial-gradient(at 18% 22%,  rgba(124,92,255,0.28) 0px, transparent 45%),
+    radial-gradient(at 78% 12%,  rgba(56,189,248,0.14) 0px, transparent 50%),
+    radial-gradient(at 88% 85%,  rgba(244,114,182,0.14) 0px, transparent 45%),
+    radial-gradient(at 35% 92%,  rgba(167,139,250,0.15) 0px, transparent 48%),
+    linear-gradient(180deg, #06060a 0%, #0c0c14 100%);
+  animation: mesh-drift 28s ease-in-out infinite alternate;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at center, #000 40%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent 85%);
+}
+@keyframes mesh-drift {
+  0%   { filter: hue-rotate(0deg);   transform: scale(1);   }
+  100% { filter: hue-rotate(18deg);  transform: scale(1.05);}
 }
 
-.pf-c-background-image::before, .pf-c-background-image__filter {
-  display: none !important;
+/* ── Left brand panel (desktop) ────────────────────────────────── */
+.pf-c-login {
+  min-height: 100vh;
+  display: grid !important;
+  place-items: center;
+}
+.pf-c-login__container {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  min-height: 100vh;
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .pf-c-login__container {
+    grid-template-columns: minmax(320px, 560px) minmax(380px, 480px) !important;
+    gap: 5rem !important;
+    padding: 0 5rem !important;
+    max-width: 1280px !important;
+  }
+  .pf-c-login__container::before {
+    content: '';
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+    height: 100%;
+    align-self: stretch;
+  }
+}
+/* Brand-side content injected on a pseudo-block for desktop only */
+@media (min-width: 960px) {
+  .pf-c-login__header {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    padding: 0 !important;
+    max-width: 520px;
+  }
+  .pf-c-login__main {
+    grid-column: 2;
+    grid-row: 1;
+  }
 }
 
-.pf-c-login__main {
-  background: var(--ai-card) !important;
-  border: 1px solid var(--ai-border) !important;
-  border-radius: var(--ai-radius) !important;
+/* Hide Authentik's default stock logo */
+.pf-c-login__header img,
+.pf-c-brand { display: none !important; }
+
+/* Brand mark (monogram) + wordmark + tagline + feature list */
+.pf-c-login__header::before {
+  content: '';
+  display: inline-block;
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--c-accent) 0%, var(--c-accent-hi) 100%);
+  border-radius: 12px;
   box-shadow:
-    0 20px 60px -20px rgba(0,0,0,0.55),
-    inset 0 1px 0 rgba(255,255,255,0.04) !important;
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  padding: 2.25rem 2rem !important;
-  max-width: 420px;
+    0 12px 28px -6px var(--c-accent-glow),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+  margin-bottom: 1.75rem;
+  position: relative;
+}
+/* A letter mark inside the gradient tile */
+.pf-c-login__header {
+  position: relative;
+}
+.pf-c-login__header::after {
+  content: 'Welcome back\A Sign in to your AI Lab workspace';
+  white-space: pre-line;
+  display: block;
+  font-size: 2.25rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--c-fg);
+  background: linear-gradient(180deg, #fff 0%, #c8c0ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 959px) {
+  /* On mobile, compact brand block above card */
+  .pf-c-login__header::after {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .pf-c-login__header {
+    padding: 2rem 1.5rem 0 1.5rem !important;
+    text-align: center;
+  }
+  .pf-c-login__header::before { margin: 0 auto 1rem auto; display: block; }
 }
 
-.pf-c-login__main-header, .pf-c-login__main-body,
-.pf-c-login__main-footer, .pf-c-login__main-footer-band {
+/* ── The auth card ──────────────────────────────────────────────── */
+.pf-c-login__main {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--radius) !important;
+  padding: 2.25rem !important;
+  max-width: 480px !important;
+  width: 100% !important;
+  position: relative;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.05) inset,
+    0 40px 80px -30px rgba(0,0,0,0.70),
+    0 10px 30px -10px rgba(124,92,255,0.18);
+}
+/* Gradient border sheen on top */
+.pf-c-login__main::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 30%, transparent);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Card header inside main */
+.pf-c-login__main-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--c-border) !important;
+  padding: 0 0 1.5rem 0 !important;
+  margin-bottom: 1.75rem !important;
+}
+
+.pf-c-title {
+  font-family: 'Inter', sans-serif !important;
+  color: var(--c-fg) !important;
+  font-weight: 600 !important;
+  font-size: 1.125rem !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.3 !important;
+}
+
+.pf-c-login__main-body,
+.pf-c-login__main-footer,
+.pf-c-login__main-footer-band {
   background: transparent !important;
   border-color: transparent !important;
 }
 
-.pf-c-login__main-header {
-  padding-bottom: 1.25rem !important;
-  border-bottom: 1px solid var(--ai-border) !important;
-  margin-bottom: 1.5rem !important;
-}
+/* ── Inputs ─────────────────────────────────────────────────────── */
+.pf-c-form__group { margin-bottom: 1.25rem !important; }
 
-.pf-c-login__header img, .pf-c-brand { display: none !important; }
-
-.pf-c-login__header::before {
-  content: 'AI Lab';
-  display: block;
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #fff 0%, var(--ai-accent-2) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 0.25rem;
-}
-
-.pf-c-login__header::after {
-  content: 'Aymen Mastouri · Secure Access';
-  display: block;
-  font-size: 0.8125rem;
-  color: var(--ai-fg-muted);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  margin-bottom: 0.75rem;
-}
-
-.pf-c-title, .pf-c-login__main-header h1 {
-  color: var(--ai-fg) !important;
-  font-family: 'Inter', sans-serif !important;
-  font-weight: 600 !important;
-  letter-spacing: -0.02em !important;
-  font-size: 1.125rem !important;
-}
-
-.pf-c-form__label, .pf-c-form__group-label label {
-  color: var(--ai-fg) !important;
+.pf-c-form__label,
+.pf-c-form__group-label label,
+label {
+  color: var(--c-fg) !important;
   font-weight: 500 !important;
   font-size: 0.8125rem !important;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
+  margin-bottom: 0.5rem !important;
 }
 
-.pf-c-form-control, input[type="text"], input[type="email"],
-input[type="password"], textarea, select {
-  background: rgba(255,255,255,0.02) !important;
-  border: 1px solid var(--ai-border) !important;
-  color: var(--ai-fg) !important;
-  border-radius: var(--ai-radius-sm) !important;
-  padding: 0.625rem 0.85rem !important;
+.pf-c-form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="url"],
+textarea, select {
+  background: rgba(255,255,255,0.025) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-fg) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.7rem 0.9rem !important;
   font-size: 0.9375rem !important;
-  transition: border-color 150ms ease, background 150ms ease !important;
-  box-shadow: none !important;
+  font-family: inherit !important;
+  width: 100% !important;
+  transition:
+    border-color 160ms var(--ease),
+    background 160ms var(--ease),
+    box-shadow 200ms var(--ease) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset !important;
 }
-.pf-c-form-control:hover { border-color: var(--ai-border-hi) !important; }
-.pf-c-form-control:focus, input:focus, textarea:focus, select:focus {
-  outline: none !important;
-  border-color: var(--ai-accent) !important;
-  box-shadow: 0 0 0 3px rgba(124,92,255,0.18) !important;
+.pf-c-form-control:hover,
+input:hover {
+  border-color: var(--c-border-hi) !important;
   background: rgba(255,255,255,0.04) !important;
 }
-.pf-c-form-control::placeholder { color: rgba(236,238,242,0.35); }
+.pf-c-form-control:focus,
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: var(--c-accent) !important;
+  box-shadow:
+    0 0 0 3px var(--c-accent-glow),
+    0 1px 0 rgba(255,255,255,0.02) inset !important;
+  background: rgba(255,255,255,0.05) !important;
+}
+.pf-c-form-control::placeholder,
+input::placeholder {
+  color: var(--c-fg-subtle) !important;
+  font-weight: 400;
+}
 
-.pf-c-button.pf-m-primary, button[type="submit"].pf-c-button {
-  background: linear-gradient(135deg, var(--ai-accent) 0%, #6246ea 100%) !important;
-  border: none !important;
+/* ── Primary button ─────────────────────────────────────────────── */
+.pf-c-button.pf-m-primary,
+button[type="submit"].pf-c-button {
+  background: linear-gradient(135deg, var(--c-accent) 0%, var(--c-accent-lo) 100%) !important;
+  border: 1px solid rgba(124,92,255,0.6) !important;
   color: #fff !important;
-  border-radius: var(--ai-radius-sm) !important;
-  padding: 0.7rem 1.1rem !important;
+  font-family: inherit !important;
   font-weight: 600 !important;
   font-size: 0.9375rem !important;
-  letter-spacing: 0.01em;
-  box-shadow: 0 4px 14px -4px rgba(124,92,255,0.45) !important;
-  transition: transform 120ms ease, box-shadow 150ms ease !important;
+  letter-spacing: 0.008em;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.75rem 1.25rem !important;
+  width: 100% !important;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow:
+    0 8px 20px -6px var(--c-accent-glow),
+    0 1px 0 rgba(255,255,255,0.28) inset,
+    0 -1px 0 rgba(0,0,0,0.15) inset !important;
+  transition:
+    transform 150ms var(--ease-spring),
+    box-shadow 200ms var(--ease) !important;
+}
+.pf-c-button.pf-m-primary::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 45%);
+  pointer-events: none;
 }
 .pf-c-button.pf-m-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px -4px rgba(124,92,255,0.6) !important;
+  box-shadow:
+    0 12px 28px -8px var(--c-accent-glow),
+    0 1px 0 rgba(255,255,255,0.35) inset !important;
 }
 .pf-c-button.pf-m-primary:active { transform: translateY(0); }
+.pf-c-button.pf-m-primary:focus-visible {
+  outline: 2px solid var(--c-accent-hi) !important;
+  outline-offset: 2px;
+}
 
-.pf-c-button.pf-m-link, a {
-  color: var(--ai-accent-2) !important;
+/* Secondary / link buttons */
+.pf-c-button.pf-m-link,
+.pf-c-login__main-footer a,
+a {
+  color: var(--c-accent-hi) !important;
   text-decoration: none !important;
+  font-weight: 500;
+  transition: color 150ms var(--ease);
 }
-.pf-c-button.pf-m-link:hover, a:hover { color: #fff !important; }
+.pf-c-button.pf-m-link:hover,
+a:hover { color: #fff !important; }
 
-.pf-c-login__main-footer, .pf-c-form__helper-text, small, .text-muted {
-  color: var(--ai-fg-muted) !important;
+/* ── Divider + helper text ─────────────────────────────────────── */
+.pf-c-login__main-footer {
+  margin-top: 1.5rem !important;
+  padding-top: 1.25rem !important;
+  border-top: 1px solid var(--c-border) !important;
+  color: var(--c-fg-muted) !important;
+  font-size: 0.8125rem;
 }
 
-.pf-c-alert.pf-m-danger, .pf-c-alert.pf-m-warning {
+.pf-c-form__helper-text, small, .text-muted {
+  color: var(--c-fg-muted) !important;
+  font-size: 0.8125rem !important;
+}
+
+/* ── Alerts ─────────────────────────────────────────────────────── */
+.pf-c-alert {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--c-fg) !important;
+  padding: 0.75rem 1rem !important;
+}
+.pf-c-alert.pf-m-danger {
   background: rgba(239,68,68,0.08) !important;
-  border: 1px solid rgba(239,68,68,0.25) !important;
+  border-color: rgba(239,68,68,0.25) !important;
   color: #fecaca !important;
-  border-radius: var(--ai-radius-sm) !important;
+}
+.pf-c-alert.pf-m-success {
+  background: rgba(34,197,94,0.08) !important;
+  border-color: rgba(34,197,94,0.25) !important;
+  color: #bbf7d0 !important;
 }
 
-.pf-c-login__footer-item img[alt*="authentik"], footer a[href*="goauthentik"] {
-  opacity: 0.35;
-  transition: opacity 150ms ease;
+/* ── Footer status badge ───────────────────────────────────────── */
+body::after {
+  /* Already used for grid — we stack status via separate fixed element below */
 }
-.pf-c-login__footer-item:hover img[alt*="authentik"] { opacity: 0.8; }
+.pf-c-login > footer,
+.pf-c-login__footer {
+  position: fixed !important;
+  bottom: 1.5rem !important;
+  right: 1.5rem !important;
+  display: inline-flex !important;
+  align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.85rem !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: 999px !important;
+  backdrop-filter: blur(10px);
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  font-size: 0.75rem !important;
+  color: var(--c-fg-muted) !important;
+  z-index: 50;
+}
+.pf-c-login__footer::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: var(--c-ok);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--c-ok-glow);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+.pf-c-login__footer::after {
+  content: 'All systems operational';
+  letter-spacing: 0.02em;
+}
+.pf-c-login__footer-item { display: none !important; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.75; transform: scale(1.15); }
+}
+
+/* ── Scrollbars (subtle) ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+
+/* ── Selection ──────────────────────────────────────────────────── */
+::selection { background: var(--c-accent-glow); color: #fff; }
+
+/* ── Reduced motion ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  .pf-c-login__footer::before { animation: none; }
+  .pf-c-button.pf-m-primary { transition: none !important; }
+}
