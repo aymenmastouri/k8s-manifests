@@ -28,6 +28,24 @@ grafana:
   defaultDashboardsEnabled: true
   defaultDashboardsTimezone: Europe/Berlin
 
+  # ─── Loki datasource (audit/log exploration) ────────────────────────
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      url: http://loki.monitoring:3100/
+      access: proxy
+      jsonData:
+        maxLines: 2000
+
+  # Sidecar picks up dashboards from ConfigMaps labelled `grafana_dashboard=1`
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+      labelValue: "1"
+
   # ─── Authentik OIDC (native integration) ────────────────────────────
   # CLIENT_ID + CLIENT_SECRET come from the grafana-oidc SealedSecret.
   envFromSecret: grafana-oidc
