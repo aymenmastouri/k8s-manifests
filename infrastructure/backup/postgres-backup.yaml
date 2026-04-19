@@ -1,0 +1,107 @@
+# ─── AI Lab · Postgres daily backups ──────────────────────────────
+# Runs every day at 02:15 UTC. Dumps authentik/langfuse/mlflow DBs
+# with pg_dump -Fc (custom format), stores in /backups/<db>/<ts>.dump
+# on the ai-lab-backups PVC. Keeps the last 7 days, prunes older.
+# Restore: pg_restore -d <db> /backups/<db>/<ts>.dump
+# ──────────────────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-lab-backups
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/component: backup-store
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: ai-lab
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "15 2 * * *"            # daily 02:15 UTC
+  timeZone: "Europe/Berlin"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: postgres-backup
+            app.kubernetes.io/part-of: ai-lab
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: dump
+              image: postgres:16-alpine
+              imagePullPolicy: IfNotPresent
+              resources:
+                requests: { cpu: 50m,  memory: 64Mi  }
+                limits:   { cpu: 500m, memory: 256Mi }
+              env:
+                - name: PGPASSWORD_AUTHENTIK
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-secrets
+                      key: POSTGRES_PASSWORD
+                - name: PGPASSWORD_LANGFUSE
+                  valueFrom:
+                    secretKeyRef:
+                      name: langfuse-secrets
+                      key: LANGFUSE_DB_PASSWORD
+                - name: PGPASSWORD_MLFLOW
+                  valueFrom:
+                    secretKeyRef:
+                      name: mlflow-secrets
+                      key: MLFLOW_DB_PASSWORD
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  TS=$(date -u +%Y%m%dT%H%M%SZ)
+                  RETAIN_DAYS=7
+                  mkdir -p /backups/authentik /backups/langfuse /backups/mlflow
+
+                  echo "[${TS}] → authentik"
+                  PGPASSWORD="${PGPASSWORD_AUTHENTIK}" pg_dump -Fc \
+                    -h authentik-postgres -U authentik -d authentik \
+                    -f /backups/authentik/${TS}.dump
+                  echo "[${TS}]   $(ls -lh /backups/authentik/${TS}.dump | awk '{print $5}')"
+
+                  echo "[${TS}] → langfuse"
+                  PGPASSWORD="${PGPASSWORD_LANGFUSE}" pg_dump -Fc \
+                    -h langfuse-postgres -U langfuse -d langfuse \
+                    -f /backups/langfuse/${TS}.dump
+                  echo "[${TS}]   $(ls -lh /backups/langfuse/${TS}.dump | awk '{print $5}')"
+
+                  echo "[${TS}] → mlflow"
+                  PGPASSWORD="${PGPASSWORD_MLFLOW}" pg_dump -Fc \
+                    -h mlflow-postgres -U mlflow -d mlflow \
+                    -f /backups/mlflow/${TS}.dump
+                  echo "[${TS}]   $(ls -lh /backups/mlflow/${TS}.dump | awk '{print $5}')"
+
+                  echo "[${TS}] pruning dumps older than ${RETAIN_DAYS} days"
+                  find /backups -name '*.dump' -mtime +${RETAIN_DAYS} -print -delete
+
+                  echo "[${TS}] done. current contents:"
+                  du -sh /backups/*
+              volumeMounts:
+                - { name: backups, mountPath: /backups }
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: ai-lab-backups
