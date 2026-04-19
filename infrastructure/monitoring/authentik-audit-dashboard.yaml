@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-authentik-audit
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: ai-lab
+data:
+  authentik-audit.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "title": "Authentik · Audit & Access",
+      "uid": "authentik-audit",
+      "tags": ["authentik", "audit", "security"],
+      "timezone": "Europe/Berlin",
+      "schemaVersion": 41,
+      "refresh": "30s",
+      "time": {"from": "now-24h", "to": "now"},
+      "templating": {
+        "list": [
+          {
+            "type": "datasource",
+            "name": "DS_LOKI",
+            "label": "Loki datasource",
+            "query": "loki",
+            "current": {"text": "Loki", "value": "loki"}
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Login attempts (24h)",
+          "id": 1,
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "sum(count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} |= \"/flows/executor\" |~ \"default-authentication-flow\" [24h]))", "refId": "A"}],
+          "options": {"reduceOptions": {"calcs": ["last"]}, "colorMode": "background"}
+        },
+        {
+          "type": "stat",
+          "title": "Failed logins (24h)",
+          "id": 2,
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "sum(count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} | json | logger=\"authentik.stages.password\" |= \"Failed\" [24h]))", "refId": "A"}],
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 20}]}}},
+          "options": {"reduceOptions": {"calcs": ["last"]}, "colorMode": "background"}
+        },
+        {
+          "type": "stat",
+          "title": "OAuth authorize (24h)",
+          "id": 3,
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "sum(count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} |= \"/application/o/authorize\" [24h]))", "refId": "A"}],
+          "options": {"reduceOptions": {"calcs": ["last"]}, "colorMode": "background"}
+        },
+        {
+          "type": "stat",
+          "title": "ForwardAuth calls (24h)",
+          "id": 4,
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "sum(count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} |= \"/outpost.goauthentik.io/auth/traefik\" [24h]))", "refId": "A"}],
+          "options": {"reduceOptions": {"calcs": ["last"]}, "colorMode": "background"}
+        },
+        {
+          "type": "timeseries",
+          "title": "Login attempts per 5 min",
+          "id": 5,
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "sum by (status) (count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} |= \"/flows/executor\" | json | __error__=\"\" [5m]))", "legendFormat": "status {{status}}", "refId": "A"}]
+        },
+        {
+          "type": "timeseries",
+          "title": "OAuth authorize / token calls per 5 min",
+          "id": 6,
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "sum(count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} |= \"/application/o/authorize\" [5m]))", "legendFormat": "authorize", "refId": "A"}, {"expr": "sum(count_over_time({namespace=\"apps\", pod=~\"authentik-server-.*\"} |= \"/application/o/token\" [5m]))", "legendFormat": "token", "refId": "B"}]
+        },
+        {
+          "type": "logs",
+          "title": "Raw Authentik server log (live)",
+          "id": 7,
+          "gridPos": {"h": 14, "w": 24, "x": 0, "y": 12},
+          "datasource": {"type": "loki", "uid": "$DS_LOKI"},
+          "targets": [{"expr": "{namespace=\"apps\", pod=~\"authentik-server-.*\"} | json | __error__=\"\" | level=~\"info|warning|error\"", "refId": "A"}],
+          "options": {"showTime": true, "showLabels": false, "wrapLogMessage": true, "dedupStrategy": "none", "enableLogDetails": true}
+        }
+      ]
+    }
