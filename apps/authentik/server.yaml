@@ -80,11 +80,15 @@ spec:
             - name: templates
               mountPath: /templates
           resources:
+            # 1Gi war zu knapp: der Server wurde unter normaler Last
+            # OOMKilled (exit 137), was Traefiks ForwardAuth mit HTTP 500
+            # quittiert - also faellt bei jedem Absturz das SSO fuer ALLE
+            # dahinterliegenden Dienste aus, nicht nur fuer authentik selbst.
             requests:
-              memory: 256Mi
+              memory: 512Mi
               cpu: 100m
             limits:
-              memory: 1Gi
+              memory: 2Gi
               cpu: "1"
           readinessProbe:
             httpGet:
@@ -185,11 +189,14 @@ spec:
             - name: templates
               mountPath: /templates
           resources:
+            # Der Worker lief bei 483Mi gegen ein 512Mi-Limit und wurde
+            # ebenfalls OOMKilled. Hintergrundtasks (Outpost-Sync, Blueprints)
+            # brauchen deutlich mehr Luft.
             requests:
-              memory: 128Mi
+              memory: 384Mi
               cpu: 50m
             limits:
-              memory: 512Mi
+              memory: 1536Mi
               cpu: 500m
       volumes:
         - name: data
