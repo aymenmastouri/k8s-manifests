@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:aymenmastouri/k8s-manifests.git
+    repoURL: https://github.com/aymenmastouri/k8s-manifests.git
     targetRevision: main
     path: argocd/applications
   destination:

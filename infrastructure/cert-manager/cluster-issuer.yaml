@@ -1,0 +1,38 @@
+---
+# Let's Encrypt Produktiv-Issuer fuer alle IngressRoutes des Labs.
+# Wird von den Certificate-Ressourcen der Apps ueber issuerRef referenziert.
+#
+# HTTP-01-Challenge laeuft ueber Traefik (k3s-eingebaut). Voraussetzung:
+# Port 80 muss von aussen auf Traefik zeigen - kein anderer Dienst darf ihn halten.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: aymen.mastouri@icloud.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
+---
+# Staging-Issuer zum Testen ohne Rate-Limit-Risiko.
+# In einer Certificate-Ressource testweise issuerRef.name auf letsencrypt-staging
+# setzen; die Zertifikate sind dann nicht browser-vertrauenswuerdig.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: aymen.mastouri@icloud.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik

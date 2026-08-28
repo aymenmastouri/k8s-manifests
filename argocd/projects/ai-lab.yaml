@@ -6,7 +6,7 @@ metadata:
 spec:
   description: AI Lab services and infrastructure
   sourceRepos:
-    - git@github.com:aymenmastouri/k8s-manifests.git
+    - https://github.com/aymenmastouri/k8s-manifests.git
   destinations:
     - namespace: apps
       server: https://kubernetes.default.svc

@@ -117,26 +117,57 @@ kubectl get nodes
 ### Schritt 2: ArgoCD installieren
 ```bash
 kubectl create namespace infra
-kubectl apply -n infra -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.14.12/manifests/install.yaml
+# --server-side noetig: die ApplicationSet-CRD sprengt sonst das
+# last-applied-configuration-Annotationslimit (262144 Bytes)
+kubectl apply -n infra --server-side=true --force-conflicts \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.2/manifests/install.yaml
+
+# WICHTIG: install.yaml ist auf den Namespace "argocd" verdrahtet. Da wir nach
+# "infra" installieren, zeigen die ClusterRoleBindings ins Leere -> der
+# Application-Controller kann den Cluster-Cache nicht aufbauen und alle Apps
+# bleiben auf "Unknown" stehen. Deshalb nachziehen:
+for b in argocd-application-controller argocd-server; do
+  kubectl patch clusterrolebinding $b --type=json \
+    -p '[{"op":"replace","path":"/subjects/0/namespace","value":"infra"}]'
+done
+kubectl rollout restart statefulset argocd-application-controller -n infra
 ```
 
 ### Schritt 3: cert-manager installieren
 ```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
-# ClusterIssuer erstellen (siehe infrastructure/cert-manager/)
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.21.1/cert-manager.yaml
+kubectl -n cert-manager rollout status deploy/cert-manager --timeout=180s
+
+# ClusterIssuer letsencrypt-prod + -staging (ohne die bleibt jedes
+# Certificate auf READY=False stehen):
+kubectl apply -f infrastructure/cert-manager/cluster-issuer.yaml
+kubectl get clusterissuer letsencrypt-prod   # -> ACMEAccountRegistered
 ```
 
 ### Schritt 4: Sealed Secrets installieren
 ```bash
-helm install sealed-secrets sealed-secrets/sealed-secrets -n infra
+# Das alte Helm-Repo (bitnami-labs.github.io/sealed-secrets) liefert 404.
+# Stattdessen das Release-Manifest verwenden - installiert nach kube-system,
+# NICHT nach infra:
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml
 ```
 
 ### Schritt 5: Sealed Secrets Key wiederherstellen
 ```bash
 # OHNE diesen Schritt koennen bestehende SealedSecrets nicht entschluesselt werden!
-# Key aus Backup einspielen:
-kubectl apply -f sealed-secrets-key-backup.yaml -n infra
-kubectl rollout restart deployment sealed-secrets-controller -n infra
+# Key aus dem KeePassXC-Backup einspielen (Namespace kube-system!):
+kubectl apply -f sealed-secrets-key-backup.yaml -n kube-system
+kubectl rollout restart deployment sealed-secrets-controller -n kube-system
+```
+
+### Schritt 5b: Falls der Key verloren ist
+Kein Drama, solange die Klartext-Werte noch existieren (KeePassXC): der
+Controller erzeugt beim Start automatisch einen neuen Key, danach alles neu
+versiegeln und den neuen Key sofort sichern.
+```bash
+./scripts/reseal.sh wave1   # Authentik, Qdrant, LiteLLM, MLflow, GHCR
+./scripts/reseal.sh wave2   # Langfuse, Open WebUI, Grafana (braucht Authentik-OIDC)
+./scripts/reseal.sh wave3   # SDLC Pilot (braucht Langfuse-API-Keys)
 ```
 
 ### Schritt 6: GHCR Credentials erstellen
