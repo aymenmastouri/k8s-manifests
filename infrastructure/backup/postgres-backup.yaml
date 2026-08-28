@@ -52,53 +52,68 @@ spec:
                 requests: { cpu: 50m,  memory: 64Mi  }
                 limits:   { cpu: 500m, memory: 256Mi }
               env:
+                # optional: true -> der Job startet auch, solange einzelne
+                # Dienste (z.B. langfuse) noch nicht ausgerollt sind.
                 - name: PGPASSWORD_AUTHENTIK
                   valueFrom:
                     secretKeyRef:
                       name: authentik-secrets
                       key: POSTGRES_PASSWORD
+                      optional: true
                 - name: PGPASSWORD_LANGFUSE
                   valueFrom:
                     secretKeyRef:
                       name: langfuse-secrets
                       key: LANGFUSE_DB_PASSWORD
+                      optional: true
                 - name: PGPASSWORD_MLFLOW
                   valueFrom:
                     secretKeyRef:
                       name: mlflow-secrets
                       key: MLFLOW_DB_PASSWORD
+                      optional: true
               command:
                 - /bin/sh
                 - -c
                 - |
-                  set -euo pipefail
+                  # Bewusst KEIN set -e: jede Datenbank wird unabhaengig
+                  # gesichert. Faellt eine aus, sollen die anderen trotzdem
+                  # ein Backup bekommen. Der Job endet am Ende mit rc=1,
+                  # damit der Fehlschlag trotzdem sichtbar bleibt.
+                  set -u
                   TS=$(date -u +%Y%m%dT%H%M%SZ)
                   RETAIN_DAYS=7
-                  mkdir -p /backups/authentik /backups/langfuse /backups/mlflow
+                  rc=0
 
-                  echo "[${TS}] → authentik"
-                  PGPASSWORD="${PGPASSWORD_AUTHENTIK}" pg_dump -Fc \
-                    -h authentik-postgres -U authentik -d authentik \
-                    -f /backups/authentik/${TS}.dump
-                  echo "[${TS}]   $(ls -lh /backups/authentik/${TS}.dump | awk '{print $5}')"
+                  dump() {
+                    name=$1; host=$2; user=$3; db=$4; pass=$5
+                    mkdir -p "/backups/${name}"
+                    if [ -z "${pass}" ]; then
+                      echo "[${TS}] ${name}: kein Passwort gesetzt (Dienst noch nicht ausgerollt?) - uebersprungen"
+                      return 0
+                    fi
+                    echo "[${TS}] -> ${name}"
+                    if PGPASSWORD="${pass}" pg_dump -Fc -h "${host}" -U "${user}" \
+                         -d "${db}" -f "/backups/${name}/${TS}.dump" 2>/tmp/${name}.err; then
+                      echo "[${TS}]    ok, $(ls -lh /backups/${name}/${TS}.dump | awk '{print $5}')"
+                    else
+                      echo "[${TS}]    FEHLER bei ${name}:"
+                      sed 's/^/[${TS}]      /' "/tmp/${name}.err" | tail -3
+                      rm -f "/backups/${name}/${TS}.dump"   # kein halbes Dump-File zuruecklassen
+                      rc=1
+                    fi
+                  }
 
-                  echo "[${TS}] → langfuse"
-                  PGPASSWORD="${PGPASSWORD_LANGFUSE}" pg_dump -Fc \
-                    -h langfuse-postgres -U langfuse -d langfuse \
-                    -f /backups/langfuse/${TS}.dump
-                  echo "[${TS}]   $(ls -lh /backups/langfuse/${TS}.dump | awk '{print $5}')"
+                  dump authentik authentik-postgres authentik authentik "${PGPASSWORD_AUTHENTIK:-}"
+                  dump langfuse  langfuse-postgres  langfuse  langfuse  "${PGPASSWORD_LANGFUSE:-}"
+                  dump mlflow    mlflow-postgres    mlflow    mlflow    "${PGPASSWORD_MLFLOW:-}"
 
-                  echo "[${TS}] → mlflow"
-                  PGPASSWORD="${PGPASSWORD_MLFLOW}" pg_dump -Fc \
-                    -h mlflow-postgres -U mlflow -d mlflow \
-                    -f /backups/mlflow/${TS}.dump
-                  echo "[${TS}]   $(ls -lh /backups/mlflow/${TS}.dump | awk '{print $5}')"
-
-                  echo "[${TS}] pruning dumps older than ${RETAIN_DAYS} days"
+                  echo "[${TS}] entferne Dumps aelter als ${RETAIN_DAYS} Tage"
                   find /backups -name '*.dump' -mtime +${RETAIN_DAYS} -print -delete
 
-                  echo "[${TS}] done. current contents:"
-                  du -sh /backups/*
+                  echo "[${TS}] fertig. aktueller Stand:"
+                  du -sh /backups/* 2>/dev/null || echo "  (noch leer)"
+                  exit ${rc}
               volumeMounts:
                 - { name: backups, mountPath: /backups }
           volumes:
