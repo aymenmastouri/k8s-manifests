@@ -1,0 +1,43 @@
+---
+# ArgoCD-Oberflaeche unter https://argocd.aymenmastouri.io
+#
+# Bewusst OHNE authentik-forwardauth: ArgoCD bringt eine eigene
+# Authentifizierung mit (lokaler admin-User bzw. OIDC ueber argocd-cm), und
+# eine vorgeschaltete ForwardAuth-Middleware wuerde `argocd login`, die CLI
+# und den gRPC-/API-Zugriff brechen. Der Zugriffsschutz liegt hier also bei
+# ArgoCD selbst - siehe rbac-cm.yaml fuer das Gruppen-Mapping.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-tls
+  namespace: infra
+  labels:
+    app.kubernetes.io/name: argocd
+    app.kubernetes.io/part-of: ai-lab
+spec:
+  secretName: argocd-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - argocd.aymenmastouri.io
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd
+  namespace: infra
+  labels:
+    app.kubernetes.io/name: argocd
+    app.kubernetes.io/part-of: ai-lab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`argocd.aymenmastouri.io`)
+      kind: Rule
+      services:
+        - name: argocd-server
+          port: 80
+  tls:
+    secretName: argocd-tls
