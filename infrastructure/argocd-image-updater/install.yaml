@@ -42,6 +42,12 @@ rules:
   - apiGroups: [""]
     resources: [secrets, configmaps]
     verbs: [get, list, watch]
+  # Ohne dieses Recht protokolliert der Updater bei jedem erfolgreichen
+  # Image-Update eine Warnung ("events is forbidden") und der Verlauf der
+  # Updates taucht nicht in `kubectl describe application` auf.
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [create, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -72,7 +78,13 @@ data:
         api_url: https://ghcr.io
         prefix: ghcr.io
         default: true
-        credentials: pullsecret:infra/ghcr-image-updater
+        # Ohne credentials -> anonymer Zugriff. Alle hier verwendeten
+        # GHCR-Pakete (portfolio, ai-lab-portal, aicodegencrew-*) sind
+        # oeffentlich. Ein pullsecret-Verweis auf ein nicht existierendes
+        # Secret laesst den Updater sonst bei jedem Zyklus mit
+        # "could not fetch secret" scheitern, statt einfach anonym zu lesen.
+        # Wird eines der Pakete wieder privat, hier wieder aktivieren:
+        #   credentials: pullsecret:infra/ghcr-image-updater
   log.level: info
   applications_api: kubernetes
 ---
