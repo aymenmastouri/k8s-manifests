@@ -1,0 +1,5 @@
+
+# lokale Klartext-Werte fuer reseal.sh - niemals committen
+.lab-secrets.env
+*.lab-secrets.env
+sealed-secrets-key-backup.yaml
